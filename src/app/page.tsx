@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import "./styles/page.css";
-// import "./styles/accounting_page.css";
 import { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, User, signOut } from "../../firebase-config";
 import { useRouter } from "next/navigation";
 
@@ -88,57 +86,6 @@ const HomePage: React.FC = () => {
           <h1 className="absolute inset-0 flex top-1/3 justify-center text-8xl font-bold">旅遊 X 拖拉</h1>
           <span className="absolute inset-0 flex top-1/2 justify-center text-2xl">讓我們一點一點開始建立屬於你的行程</span>
       </div>
-      {user ? (
-        <>
-          <span>Welcome, {(user.email)}</span>
-          <Link href="/trips">
-            <button>立刻開始</button>
-          </Link>
-          <button onClick={handleSignOut}>登出</button>
-        </>
-      ) : (
-        <>
-          <div className="auth-container">
-            <span>註冊</span>
-            <form onSubmit={handleSignUp}>
-              <input
-                type="email"
-                placeholder="Email"
-                value={signUpEmail}
-                onChange={(e) => setSignUpEmail(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={signUpPassword}
-                onChange={(e) => setSignUpPassword(e.target.value)}
-              />
-              <button onClick={handleSignUp}>註冊</button>
-            </form>
-          </div>
-          
-          <br />
-
-          <div className="auth-container">
-            <span>登入</span>
-            <form onSubmit={handleSignIn}>
-              <input
-                type="email"
-                placeholder="Email"
-                value={signInEmail}
-                onChange={(e) => setSignInEmail(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={signInPassword}
-                onChange={(e) => setSignInPassword(e.target.value)}
-              />
-              <button onClick={handleSignIn}>登入</button>
-            </form>
-          </div>
-        </>
-      )}
     </div>
   );
 };
