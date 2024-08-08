@@ -11,7 +11,10 @@ const config: Config = {
       colors: {
         'custom-kame': '#a5dee4', // 自定義顏色 瓶覗
         'custom-dark-green': '#03312E', // 自定義顏色 dark green
-        'custom-lapis':'006696', // 自定義顏色 lapis lazuli
+        'custom-reseda-green':'#5c745c', // 自定義顏色 reseda green 橄欖綠
+        'custom-lapis':'#006696', // 自定義顏色 lapis lazuli 一種藍綠色
+        'custom-yinmn-blue':'#315186', // 自定義顏色 yinmn blue 一種藍色
+        'custom-earth-yellow':'#DDA15E', //看起來有點像淡土黃色
       },
 
       backgroundImage: {

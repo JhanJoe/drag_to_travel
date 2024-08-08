@@ -11,7 +11,7 @@ interface AuthModalProps {
     onClose: () => void;
 }
 
-const Authmodal: React.FC<AuthModalProps> = ({ onClose }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const [isSignUp, setIsSignUp] = useState(false); //預設為登入表單
     const [signInEmail, setSignInEmail] = useState("");
     const [signInPassword, setSignInPassword] = useState("");
@@ -50,7 +50,7 @@ const Authmodal: React.FC<AuthModalProps> = ({ onClose }) => {
         <div className="relative bg-white rounded-lg shadow-lg p-6 w-[350px] h-[320px]">
         {isSignUp ? (
             <form onSubmit={handleSignUp} className="flex flex-col h-full relative">
-                {/* <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-custom-1"></div> */}
+                {/* <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-custom-1"></div>  TODO 漸變顏色條 尚未調整*/}
                 
                 <h2 className="text-3xl mb-4 text-center">註冊</h2>
                 <input
@@ -117,4 +117,4 @@ const Authmodal: React.FC<AuthModalProps> = ({ onClose }) => {
     );
 };
 
-export default Authmodal;
+export default AuthModal;
