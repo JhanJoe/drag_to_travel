@@ -24,7 +24,7 @@ const TripsPage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const isAuthenticated = onAuthStateChanged(auth, (user) => {
             if (user) {
                 setUser(user);
                 fetchTrips(user.uid);
@@ -33,7 +33,7 @@ const TripsPage: React.FC = () => {
             }
         });
 
-        return () => unsubscribe();
+        return () => isAuthenticated();
     }, [router]);
 
     const fetchTrips = async (userId: string) => {
