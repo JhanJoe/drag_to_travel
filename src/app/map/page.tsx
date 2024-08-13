@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
 import { auth, onAuthStateChanged, db } from "../../../firebase-config";
-// import GoogleMapReact from 'google-map-react';
 import { useRouter, useSearchParams } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
-
-interface PlaceList {
-    id: string;
-    title: string;
-    notes: string;
-}
+import { Place, PlaceList } from '../types/map';
+import GoogleMapComponent from "../components/GoogleMapComponent";
 
 interface Trip {
     id: string;
@@ -27,6 +22,9 @@ const MapPage: React.FC = () => {
     const [newPlaceListNotes, setNewPlaceListNotes] = useState("");
     const [user, setUser] = useState<any>(null);
     const [trip, setTrip] = useState<Trip | null>(null);
+    const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null);
+    const [selectedPlace, setSelectedPlace] = useState<any>(null); // 存放選取的景點資訊
+    const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
     const searchParams = useSearchParams();
     const tripId =  searchParams.get("tripId");
@@ -60,10 +58,14 @@ const MapPage: React.FC = () => {
         const placeListsCollection = collection(db, "placeLists");
         const q = query(placeListsCollection, where("userId", "==", userId), where("tripId", "==", tripId));
         const placeListsSnapshot = await getDocs(q);
-        const placeListsList = placeListsSnapshot.docs.map(doc => {
+        const placeListsList = await Promise.all(placeListsSnapshot.docs.map(async (doc) => {
             const data = doc.data() as Omit<PlaceList, 'id'>;
-            return { id: doc.id, ...data };
-        });
+            const placesCollection = collection(db, "places");
+            const placesQuery = query(placesCollection, where("userId", "==", userId), where("tripId", "==", tripId), where("placeListId", "==", doc.id));
+            const placesSnapshot = await getDocs(placesQuery);
+            const places = placesSnapshot.docs.map(placeDoc => placeDoc.data() as Place);
+            return { id: doc.id, ...data, places };
+        }));
 
         setPlaceLists(placeListsList);
     };
@@ -75,6 +77,7 @@ const MapPage: React.FC = () => {
             notes: newPlaceListNotes,
             userId: user.uid,
             tripId: tripId,
+            
         };
         const docRef = await addDoc(collection(db, "placeLists"), newPlaceList);
         setPlaceLists([...placeLists, { id: docRef.id, ...newPlaceList }]);
@@ -97,29 +100,63 @@ const MapPage: React.FC = () => {
         setPlaceLists(placeLists.map(placeList => placeList.id === id ? { ...placeList, title: updatedTitle, notes: updatedNotes } : placeList));
     };
 
+    const handleAddToPlaceList = async (placeListId: string) => {
+        if (selectedPlace && tripId) {
+            const newPlace = {
+                title: selectedPlace.name,
+                address: selectedPlace.formatted_address,
+                latitude: selectedPlace.geometry.location.lat(),
+                longitude: selectedPlace.geometry.location.lng(),
+                tripId: tripId,
+                userId: user.uid,
+                placeListId: placeListId,
+                note: selectedPlace.rating ? `Rating: ${selectedPlace.rating} (${selectedPlace.user_ratings_total} reviews)` : '',
+            };
+
+            await addDoc(collection(db, "places"), newPlace);
+
+            setPlaceLists(prev => prev.map(placeList => 
+                placeList.id === placeListId 
+                    ? { ...placeList, places: [...(placeList.places || []), newPlace] }
+                    : placeList
+            ));
+        }
+    };
+
     if (!tripId) {
         return <div>Loading...</div>;
     }
 
     return (
         <div className="flex h-screen">
-            <div className="w-1/4 p-4 overflow-y-auto bg-gray-100">
+            <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
                 {trip && (
-                    <div className="mb-3 p-2 border rounded-xl bg-custom-kame text-center">
+                    <div className="mb-2 p-2 border rounded-xl bg-custom-kame text-center">
                         <div className="text-2xl font-bold">{trip.name}</div>
                         <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
                         <div>{trip.notes}</div>
                     </div>
                 )}
-                <h2 className="text-2xl font-bold mb-3 text-center">景點列表</h2>
-                {placeLists.map((placeList) => (
-                    <PlaceListCard
+                <h2 className="text-xl font-bold mb-2 text-center">景點列表</h2>
+                <div className="grid grid-cols-2 gap-2">
+                    {placeLists.map((placeList) => (
+                        <PlaceListCard
                             key={placeList.id}
                             placeList={placeList}
                             onDelete={handleDeletePlaceList}
                             onUpdate={handleUpdatePlaceList}
-                    />
-                ))}
+                        >
+                            <div className="flex justify-center">
+                                <button
+                                    onClick={() => handleAddToPlaceList(placeList.id)}
+                                    className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
+                                >
+                                    加入此列表
+                                </button>
+                            </div>
+                        </PlaceListCard>
+                    ))}
+                </div>
                 <div className="mt-3">
                     <input
                         type="text"
@@ -142,14 +179,17 @@ const MapPage: React.FC = () => {
                     </button>
                 </div>
             </div>
-            <div className="w-3/4">
-                {/* <GoogleMapReact
-                bootstrapURLKeys={{ key: "YOUR_GOOGLE_MAPS_API_KEY" }}
-                defaultCenter={{ lat: 25.0330, lng: 121.5654 }}
-                defaultZoom={10}
-                >
-                {/* 地圖上的標記 */}
-                {/* </GoogleMapReact> */} 
+            <div className="w-2/3 relative h-full">
+                <GoogleMapComponent
+                        markerPosition={markerPosition}
+                        setMarkerPosition={setMarkerPosition}
+                        selectedPlace={selectedPlace}
+                        setSelectedPlace={setSelectedPlace}
+                        infoWindowOpen={infoWindowOpen}
+                        setInfoWindowOpen={setInfoWindowOpen}
+                        placeLists={placeLists}
+                        handleAddToPlaceList={handleAddToPlaceList}
+                />
             </div>
             </div>
         );

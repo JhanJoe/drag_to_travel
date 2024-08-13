@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 bg-custom-kame shadow-md flex justify-between items-center px-4 py-2 z-10">
+      <nav className="fixed top-0 left-0 right-0 bg-custom-kame shadow-md flex justify-between items-center px-4 py-2 z-30">
         <div className="text-2xl font-bold text-custom-yinmn-blue">
           <Link href="/">旅遊 X 拖拉</Link>
         </div>

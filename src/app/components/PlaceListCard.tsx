@@ -1,20 +1,16 @@
 import React, { useState } from "react";
-// import { PlaceList } from "../map/page"; 
 import { FaEdit } from "react-icons/fa";
+import { Place, PlaceList } from '../types/map';
 
-interface PlaceList {
-    id: string;
-    title: string;
-    notes: string;
-}
 
 interface PlaceListCardProps {
-    placeList: PlaceList;
+    placeList: PlaceList & { places?: Place[] };
     onDelete: (id: string) => void;
     onUpdate: (id: string, updatedTitle: string, updatedNotes: string) => void;
+    children?: React.ReactNode;    
 }
 
-const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate }) => {
+const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, children }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [updatedTitle, setUpdatedTitle] = useState(placeList.title);
     const [updatedNotes, setUpdatedNotes] = useState(placeList.notes);
@@ -31,7 +27,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
     };
 
     return (
-        <div className="relative mb-3 p-3 border rounded-xl bg-white">
+        <div className="relative mb-3 p-3 border rounded-xl bg-white overflow-hidden">
             {isEditing ? (
                 <>
                     <input
@@ -69,14 +65,17 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
 
                     <div className="text-lg font-bold text-center">{placeList.title}</div>
                     <div className="text-center text-gray-400">{placeList.notes}</div>
-                    {/* <button
-                        onClick={() => setIsEditing(true)}
-                        className="w-full p-2 bg-gray-300 text-black rounded mt-2"
-                    >
-                        編輯
-                    </button> */}
+                    <div className="mt-2">
+                        {placeList.places?.map((place) => (
+                            <div key={place.title} className="text-center text-gray-600">
+                                {place.title}
+                            </div>
+                        ))}
+                    </div>
+                    {children}
                 </>
             )}
+            
         </div>
     );
 };
