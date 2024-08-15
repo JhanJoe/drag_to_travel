@@ -64,6 +64,7 @@ const MapPage: React.FC = () => {
             const placesQuery = query(placesCollection, where("userId", "==", userId), where("tripId", "==", tripId), where("placeListId", "==", doc.id));
             const placesSnapshot = await getDocs(placesQuery);
             const places = placesSnapshot.docs.map(placeDoc => placeDoc.data() as Place);
+            console.log({ id: doc.id, ...data, places }); //TODO 待刪掉
             return { id: doc.id, ...data, places };
         }));
 
@@ -102,24 +103,66 @@ const MapPage: React.FC = () => {
 
     const handleAddToPlaceList = async (placeListId: string) => {
         if (selectedPlace && tripId) {
-            const newPlace = {
+            const newPlace: Omit<Place, 'id'> = {
                 title: selectedPlace.name,
                 address: selectedPlace.formatted_address,
                 latitude: selectedPlace.geometry.location.lat(),
                 longitude: selectedPlace.geometry.location.lng(),
-                tripId: tripId,
-                userId: user.uid,
-                placeListId: placeListId,
                 note: selectedPlace.rating ? `Rating: ${selectedPlace.rating} (${selectedPlace.user_ratings_total} reviews)` : '',
+                userId: user.uid,
+                tripId: tripId,
+                placeListId: placeListId,
             };
+    
+            try {
+                const placeRef = await addDoc(collection(db, "places"), newPlace);
+    
+                const addedPlace: Place = {
+                    ...newPlace,
+                    id: placeRef.id,
+                };
+    
+                console.log("Added place:", addedPlace); //TODO 待刪掉
 
-            await addDoc(collection(db, "places"), newPlace);
+                setPlaceLists(prev => prev.map(placeList =>
+                    placeList.id === placeListId
+                        ? { ...placeList, places: [...(placeList.places || []), addedPlace] }
+                        : placeList
+                ));
+    
+                console.log("Place added successfully with ID:", placeRef.id); //TODO 待刪掉
+            } catch (error) {
+                console.error("Error adding place:", error);
+            }
+        }
+    };
+    
+    const handleDeletePlace = async (placeId: string) => {
+        console.log("Attempting to delete place with ID:", placeId); //TODO 待刪掉
+        if (!placeId) {
+            console.error("Invalid place ID"); 
+            return;
+        }
+        try {
+            await deleteDoc(doc(db, "places", placeId));
 
-            setPlaceLists(prev => prev.map(placeList => 
-                placeList.id === placeListId 
-                    ? { ...placeList, places: [...(placeList.places || []), newPlace] }
-                    : placeList
-            ));
+            setPlaceLists((prevPlaceLists) => {
+                const updatedPlaceLists = prevPlaceLists.map((placeList) => {
+                    const updatedPlaces = placeList.places?.filter((place) => {
+                        if (place.id === placeId) {
+                            console.log("Removing place from state:", place);
+                            return false;
+                        }
+                        return true;
+                    }) || [];
+                    console.log("Updated places for placeList:", placeList.id, updatedPlaces); //TODO 待刪掉
+                    return { ...placeList, places: updatedPlaces };
+                });
+                console.log("Updated placeLists state:", updatedPlaceLists); //TODO 待刪掉
+                return updatedPlaceLists;
+            });
+        } catch (error) {
+            console.error("Error deleting place:", error);
         }
     };
 
@@ -145,6 +188,7 @@ const MapPage: React.FC = () => {
                             placeList={placeList}
                             onDelete={handleDeletePlaceList}
                             onUpdate={handleUpdatePlaceList}
+                            onDeletePlace={handleDeletePlace}
                         >
                             <div className="flex justify-center">
                                 <button
@@ -190,6 +234,7 @@ const MapPage: React.FC = () => {
                         placeLists={placeLists}
                         handleAddToPlaceList={handleAddToPlaceList}
                 />
+                
             </div>
             </div>
         );

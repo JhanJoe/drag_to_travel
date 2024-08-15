@@ -64,7 +64,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                     // 使用 setTimeout 確保地圖已經完全加載後再移動
                     setTimeout(() => {
                         mapRef.current?.panTo(position);
-                        mapRef.current?.setZoom(14);
+                        mapRef.current?.setZoom(15);
                     }, 100);
                 }
             } else {
@@ -74,13 +74,15 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     };
 
     const handleMapClick = (event: google.maps.MapMouseEvent) => {
+        // event.stop(); //關掉點擊地圖上地點出現的內建資訊框(TODO但部分景點type因為不在nearbysearch的範圍內，所以如果啟用，點擊部分景點就會變得完全沒有任何資訊框)
+
         if (event.latLng && placesService) {
             setInfoWindowOpen(false);
             const location = event.latLng.toJSON();
             placesService.nearbySearch(
                 {
                     location: location,
-                    radius: 50,
+                    radius: 5,
                     type: 'point_of_interest'
                 },
                 (results, status) => {
@@ -109,7 +111,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
             >
                 <input
                     type="text"
-                    placeholder="搜尋景點"
+                    placeholder="輸入景點後，按下Enter開始搜尋。也可以直接點擊地圖景點噢"
                     className="absolute top-4 left-4 z-10 p-2 border rounded w-3/4"
                 />
             </Autocomplete>
@@ -117,7 +119,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 onLoad={onLoad}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
                 zoom={10}
-                options={{ mapTypeControl: false }} // 取消地圖/衛星切換功能
+                options={{ mapTypeControl: false, }} // 取消地圖/衛星切換功能
                 onClick={handleMapClick}
             >
                 {markerPosition && (

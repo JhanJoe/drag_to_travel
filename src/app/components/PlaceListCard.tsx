@@ -7,10 +7,11 @@ interface PlaceListCardProps {
     placeList: PlaceList & { places?: Place[] };
     onDelete: (id: string) => void;
     onUpdate: (id: string, updatedTitle: string, updatedNotes: string) => void;
+    onDeletePlace: (placeId: string) => void;
     children?: React.ReactNode;    
 }
 
-const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, children }) => {
+const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, onDeletePlace, children }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [updatedTitle, setUpdatedTitle] = useState(placeList.title);
     const [updatedNotes, setUpdatedNotes] = useState(placeList.notes);
@@ -67,12 +68,19 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     <div className="text-center text-gray-400">{placeList.notes}</div>
                     <div className="mt-2">
                         {placeList.places?.map((place) => (
-                            <div key={place.title} className="text-center text-gray-600">
-                                {place.title}
+                        <div key={place.id} className="flex items-center justify-between text-center text-gray-600">
+                            <div>{place.title}</div>
+                                <button
+                                    onClick={() => onDeletePlace(place.id)}
+                                    className="text-red-500"
+                                >
+                                    ×
+                                </button>
                             </div>
                         ))}
                     </div>
                     {children}
+                    
                 </>
             )}
             
