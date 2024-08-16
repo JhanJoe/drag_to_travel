@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect, useCallback} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
 import { auth, onAuthStateChanged, db } from "../../../firebase-config";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,8 +63,11 @@ const MapPage: React.FC = () => {
             const placesCollection = collection(db, "places");
             const placesQuery = query(placesCollection, where("userId", "==", userId), where("tripId", "==", tripId), where("placeListId", "==", doc.id));
             const placesSnapshot = await getDocs(placesQuery);
-            const places = placesSnapshot.docs.map(placeDoc => placeDoc.data() as Place);
-            console.log({ id: doc.id, ...data, places }); //TODO 待刪掉
+            const places = placesSnapshot.docs.map(placeDoc => ({
+                id: placeDoc.id,  
+                ...placeDoc.data()
+            } as Place));
+            console.log("Fetched places:", places);
             return { id: doc.id, ...data, places };
         }));
 
@@ -137,34 +140,27 @@ const MapPage: React.FC = () => {
         }
     };
     
-    const handleDeletePlace = async (placeId: string) => {
+    const handleDeletePlace = useCallback(async (placeId: string) => {
         console.log("Attempting to delete place with ID:", placeId); //TODO 待刪掉
-        if (!placeId) {
-            console.error("Invalid place ID"); 
+        if (!placeId || typeof placeId !== 'string') {
+            console.error("Invalid place ID");
             return;
         }
         try {
             await deleteDoc(doc(db, "places", placeId));
-
-            setPlaceLists((prevPlaceLists) => {
-                const updatedPlaceLists = prevPlaceLists.map((placeList) => {
-                    const updatedPlaces = placeList.places?.filter((place) => {
-                        if (place.id === placeId) {
-                            console.log("Removing place from state:", place);
-                            return false;
-                        }
-                        return true;
-                    }) || [];
-                    console.log("Updated places for placeList:", placeList.id, updatedPlaces); //TODO 待刪掉
-                    return { ...placeList, places: updatedPlaces };
-                });
-                console.log("Updated placeLists state:", updatedPlaceLists); //TODO 待刪掉
-                return updatedPlaceLists;
-            });
+            
+            setPlaceLists((prevPlaceLists) => 
+                prevPlaceLists.map((placeList) => ({
+                    ...placeList,
+                    places: placeList.places?.filter((place) => place.id !== placeId) || []
+                }))
+            );
+            
+            console.log("Place deleted successfully"); //TODO 待刪掉
         } catch (error) {
             console.error("Error deleting place:", error);
         }
-    };
+    }, []);
 
     if (!tripId) {
         return <div>Loading...</div>;
@@ -206,13 +202,13 @@ const MapPage: React.FC = () => {
                         type="text"
                         value={newPlaceListTitle}
                         onChange={(e) => setNewPlaceListTitle(e.target.value)}
-                        placeholder="景點列表標題"
+                        placeholder="請新增景點列表標題，如: 札幌"
                         className="w-full mb-2 p-2 border rounded"
                     />
                     <textarea
                         value={newPlaceListNotes}
                         onChange={(e) => setNewPlaceListNotes(e.target.value)}
-                        placeholder="備註"
+                        placeholder="可添加景點列表的備註"
                         className="w-full mb-2 p-2 border rounded"
                     />
                     <button

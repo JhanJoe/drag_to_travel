@@ -43,7 +43,7 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             <h2 className="text-2xl mb-4 text-center">{trip ? "編輯行程" : "新增行程"}</h2>
             <input
             type="text"
-            placeholder="旅程名稱"
+            placeholder="旅程名稱，如：北海道"
             className="mb-4 p-2 border rounded w-full"
             value={name}
             onChange={e => setName(e.target.value)}

@@ -101,7 +101,7 @@ const TripsPage: React.FC = () => {
                 }}
             >
                 <div className="text-center text-4xl">+</div>
-                <div className="text-center">新增行程</div>
+                <div className="text-center">請新增行程來開始後續規劃</div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {trips.map(trip => (

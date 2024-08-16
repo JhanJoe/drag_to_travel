@@ -12,6 +12,7 @@ interface PlaceListCardProps {
 }
 
 const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, onDeletePlace, children }) => {
+    console.log("PlaceList in PlaceListCard:", placeList);
     const [isEditing, setIsEditing] = useState(false);
     const [updatedTitle, setUpdatedTitle] = useState(placeList.title);
     const [updatedNotes, setUpdatedNotes] = useState(placeList.notes);
@@ -28,7 +29,22 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
     };
 
     return (
-        <div className="relative mb-3 p-3 border rounded-xl bg-white overflow-hidden">
+        <div className="relative mb-3 p-3 border rounded-xl bg-white overflow-hidden max-h-[250px] flex flex-col">
+            <style jsx>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #c0c0c0;
+                    border-radius: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+            `}</style>
             {isEditing ? (
                 <>
                     <input
@@ -53,31 +69,41 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                 <>
                     <button
                         onClick={handleDelete}
-                        className="absolute top-1 right-4 text-2xl text-gray-400"
+                        className="absolute top-1 right-3 text-2xl text-gray-400"
                     >
                         ×
                     </button>
                     <button
                         onClick={() => setIsEditing(true)}
-                        className="absolute top-10 right-4 text-xl text-gray-400"
+                        className="absolute top-3 right-8 text-xl text-gray-400"
                     >
                         <FaEdit />
                     </button>
 
                     <div className="text-lg font-bold text-center">{placeList.title}</div>
-                    <div className="text-center text-gray-400">{placeList.notes}</div>
-                    <div className="mt-2">
-                        {placeList.places?.map((place) => (
+                    <div className="text-center text-gray-400 text-sm">{placeList.notes}</div>
+                    <div className="mt-2 overflow-y-auto flex-grow custom-scrollbar">
+                    {placeList.places?.map((place) => {
+                    console.log("Place in map function:", place); //TODO
+                    return (
                         <div key={place.id} className="flex items-center justify-between text-center text-gray-600">
                             <div>{place.title}</div>
-                                <button
-                                    onClick={() => onDeletePlace(place.id)}
-                                    className="text-red-500"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        ))}
+                            <button
+                                onClick={() => {
+                                    console.log("Deleting place:", place);  //TODO
+                                    if (place.id) {
+                                        onDeletePlace(place.id); //TODO
+                                    } else {
+                                        console.error("Place id is undefined:", place);
+                                    }
+                                }}
+                                className="text-red-500"
+                            >
+                                ×
+                            </button>
+                        </div>
+                            );
+                        })}
                     </div>
                     {children}
                     
