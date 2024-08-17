@@ -27,7 +27,12 @@ const MapPage: React.FC = () => {
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
     const searchParams = useSearchParams();
-    const tripId =  searchParams.get("tripId");
+    const [tripId, setTripId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const id = searchParams.get("tripId");
+        setTripId(id);
+    }, [searchParams]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
