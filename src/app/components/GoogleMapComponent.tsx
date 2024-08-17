@@ -160,7 +160,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
             >
                 <input
                     type="text"
-                    placeholder="輸入景點名稱後，點擊浮現對話框的景點搜尋。或也可以直接點擊地圖上景點"
+                    placeholder="輸入景點名稱後，點擊浮現對話框的景點開始搜尋。或也可以直接點擊地圖上景點"
                     className="absolute top-4 left-4 z-10 p-2 border rounded w-3/4"
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}

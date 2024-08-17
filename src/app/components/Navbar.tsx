@@ -43,13 +43,13 @@ const Navbar: React.FC = () => {
     <>
       <nav className="fixed top-0 left-0 right-0 bg-custom-kame shadow-md flex justify-between items-center px-4 py-2 z-30">
         <div className="text-2xl font-bold text-custom-yinmn-blue">
-          <Link href="/">旅遊 X 拖拉</Link>
+          <Link href="/" className="hover:text-custom-reseda-green">旅遊 X 拖拉</Link>
         </div>
         <div className="space-x-4">
           {user ? (
             <>
               <span className="text-custom-yinmn-blue">歡迎，{user.email}</span>
-              <Link href="/trips">行程管理</Link>
+              <Link href="/trips" className="bg-custom-earth-yellow p-2 rounded hover:bg-custom-reseda-green hover:text-white ">建立/選擇行程</Link>
               <button onClick={handleSignOut}>會員登出</button>
             </>
           ) : (

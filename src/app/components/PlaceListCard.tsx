@@ -42,7 +42,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #555;
+                    background: #5C7457;
                 }
             `}</style>
             {isEditing ? (
@@ -69,13 +69,13 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                 <>
                     <button
                         onClick={handleDelete}
-                        className="absolute top-1 right-3 text-2xl text-gray-400"
+                        className="absolute top-1 right-3 text-2xl text-gray-400" title="刪除行程"
                     >
                         ×
                     </button>
                     <button
                         onClick={() => setIsEditing(true)}
-                        className="absolute top-3 right-8 text-xl text-gray-400"
+                        className="absolute top-3 right-8 text-xl text-gray-400" title="編輯行程"
                     >
                         <FaEdit />
                     </button>
@@ -87,20 +87,22 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     console.log("Place in map function:", place); //TODO
                     return (
                         <div key={place.id} className="flex items-center justify-between text-center text-gray-600">
-                            <div>{place.title}</div>
+                            <div className="truncate" title={place.title}>{place.title}</div>
                             <button
                                 onClick={() => {
                                     console.log("Deleting place:", place);  //TODO
                                     if (place.id) {
-                                        onDeletePlace(place.id); //TODO
+                                        onDeletePlace(place.id); 
                                     } else {
                                         console.error("Place id is undefined:", place);
                                     }
                                 }}
                                 className="text-red-500"
+                                title="刪除此景點"
                             >
                                 ×
                             </button>
+                            
                         </div>
                             );
                         })}

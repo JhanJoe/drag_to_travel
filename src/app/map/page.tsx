@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, Suspense} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../../../firebase-config";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
 import { Place, PlaceList } from '../types/map';
 import GoogleMapComponent from "../components/GoogleMapComponent";
@@ -198,9 +198,9 @@ const MapPage: React.FC = () => {
                                 <div className="flex justify-center">
                                     <button
                                         onClick={() => handleAddToPlaceList(placeList.id)}
-                                        className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
+                                        className="mt-2 p-1 bg-custom-reseda-green text-white rounded text-sm active:scale-95 active:shadow-inner"
                                     >
-                                        加入此列表
+                                        將景點加入此列表
                                     </button>
                                 </div>
                             </PlaceListCard>
@@ -211,10 +211,10 @@ const MapPage: React.FC = () => {
                             type="text"
                             value={newPlaceListTitle}
                             onChange={(e) => setNewPlaceListTitle(e.target.value)}
-                            placeholder="請新增景點列表標題，如: 札幌"
+                            placeholder="請新增景點列表標題，如：札幌"
                             className="w-full mb-2 p-2 border rounded"
                         />
-                        <textarea
+                        <input
                             value={newPlaceListNotes}
                             onChange={(e) => setNewPlaceListNotes(e.target.value)}
                             placeholder="可添加景點列表的備註"
@@ -222,9 +222,9 @@ const MapPage: React.FC = () => {
                         />
                         <button
                             onClick={handleAddPlaceList}
-                            className="w-full p-2 bg-custom-reseda-green text-white rounded"
+                            className="w-full p-2 bg-custom-reseda-green text-white rounded active:scale-95 active:shadow-inner"
                         >
-                            新增景點列表
+                            新增景點列表以儲存景點
                         </button>
                     </div>
                 </div>

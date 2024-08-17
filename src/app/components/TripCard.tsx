@@ -41,12 +41,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit }) => {
             <div className="mt-3 flex justify-center">
                 <button
                     onClick={() => onEdit(trip)}
-                    className="bg-custom-reseda-green text-white p-2 rounded h-10 mr-3 flex items-center justify-center"
+                    className="bg-custom-reseda-green text-white p-2 rounded h-10 mr-3 flex items-center justify-center active:scale-95 active:shadow-inner"
                 >
                     編輯行程
                 </button>
                 <Link href={`/map?tripId=${trip.id}`}>
-                    <button className="bg-custom-earth-yellow text-white p-2 rounded h-10 flex items-center justify-center">
+                    <button className="bg-custom-earth-yellow text-white p-2 rounded h-10 flex items-center justify-center active:scale-95 active:shadow-inner">
                         開始規劃
                     </button>
                 </Link>
