@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const isAuthenticated = onAuthStateChanged(auth, (user: User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       if (user) {
         setUser(user);
       } else {
@@ -21,7 +21,7 @@ const Navbar: React.FC = () => {
       }
     });
 
-    return () => isAuthenticated();
+    return () => unsubscribe();
   }, [router]);
 
   const handleSignOut = async () => {

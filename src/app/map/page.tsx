@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useCallback} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
-import { auth, onAuthStateChanged, db } from "../../../firebase-config";
+import { auth, db, onAuthStateChanged } from "../../../firebase-config";
 import { useRouter, useSearchParams } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
 import { Place, PlaceList } from '../types/map';
 import GoogleMapComponent from "../components/GoogleMapComponent";
 
-interface Trip {
+interface Trip { 
     id: string;
     name: string;
     startDate: string;
@@ -16,13 +16,13 @@ interface Trip {
     notes: string;
 }
 
-const MapPage: React.FC = () => {
+const MapPage: React.FC = () => {  
     const [placeLists, setPlaceLists] = useState<PlaceList[]>([]);
     const [newPlaceListTitle, setNewPlaceListTitle] = useState("");
     const [newPlaceListNotes, setNewPlaceListNotes] = useState("");
     const [user, setUser] = useState<any>(null);
     const [trip, setTrip] = useState<Trip | null>(null);
-    const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null);
+    const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null); 
     const [selectedPlace, setSelectedPlace] = useState<any>(null); // 存放選取的景點資訊
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
@@ -30,20 +30,21 @@ const MapPage: React.FC = () => {
     const tripId =  searchParams.get("tripId");
 
     useEffect(() => {
-        const isAuthenticated = onAuthStateChanged(auth, (user) => {
-        if (user) {
-            setUser(user);
-            if (tripId) {
-                fetchTripDetails(tripId);
-                fetchPlaceLists(user.uid, tripId);
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                if (tripId) {
+                    fetchTripDetails(tripId);
+                    fetchPlaceLists(currentUser.uid, tripId);
+                }
+            } else {
+                router.push("/");
             }
-        } else {
-            router.push("/");
-        }
         });
 
-    return () => isAuthenticated();
-    }, [router, tripId]);
+        // 當元件卸載時，清理firebase的監聽函數
+        return () => unsubscribe();
+    }, [tripId, router]);
 
     const fetchTripDetails = async (tripId: string) => {
         const tripDoc = doc(db, "trips", tripId);

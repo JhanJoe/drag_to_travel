@@ -37,7 +37,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     });
 
     const onLoad = (mapInstance: google.maps.Map) => {
-        mapRef.current = mapInstance;
+        mapRef.current = mapInstance; 
         setPlacesService(new google.maps.places.PlacesService(mapInstance));
         mapInstance.panTo({ lat: 25.0330, lng: 121.5654 });
     };
@@ -80,7 +80,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     const isSpecificPlace = (result: google.maps.GeocoderResult) => {
         // 檢查結果是否為具體地點而不僅是地址
         return result.types.some(type => 
-            ['point_of_interest', 'establishment', 'premise', 'subpremise'].includes(type)
+            ['point_of_interest', 'establishment', 'premise', 'subpremise', 'landamrk'].includes(type) 
         );
     };
 
