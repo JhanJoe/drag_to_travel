@@ -29,9 +29,11 @@ const MapPage: React.FC = () => {
     const [tripId, setTripId] = useState<string | null>(null);
 
     useEffect(() => {
-        const searchParams = new URLSearchParams(window.location.search);
-        const id = searchParams.get("tripId");
-        setTripId(id);
+        if (typeof window !== 'undefined') {
+            const searchParams = new URLSearchParams(window.location.search);
+            const id = searchParams.get("tripId");
+            setTripId(id);
+        }
     }, []);
     
     useEffect(() => {
