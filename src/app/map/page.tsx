@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback} from "react";
+import React, { useState, useEffect, useCallback, Suspense} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../../../firebase-config";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -168,72 +168,74 @@ const MapPage: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen">
-            <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
-                {trip && (
-                    <div className="mb-2 p-2 border rounded-xl bg-custom-kame text-center">
-                        <div className="text-2xl font-bold">{trip.name}</div>
-                        <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
-                        <div>{trip.notes}</div>
+        <Suspense fallback={<div>Loading...</div>}>
+            <div className="flex h-screen">
+                <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
+                    {trip && (
+                        <div className="mb-2 p-2 border rounded-xl bg-custom-kame text-center">
+                            <div className="text-2xl font-bold">{trip.name}</div>
+                            <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
+                            <div>{trip.notes}</div>
+                        </div>
+                    )}
+                    <h2 className="text-xl font-bold mb-2 text-center">景點列表</h2>
+                    <div className="grid grid-cols-2 gap-2">
+                        {placeLists.map((placeList) => (
+                            <PlaceListCard
+                                key={placeList.id}
+                                placeList={placeList}
+                                onDelete={handleDeletePlaceList}
+                                onUpdate={handleUpdatePlaceList}
+                                onDeletePlace={handleDeletePlace}
+                            >
+                                <div className="flex justify-center">
+                                    <button
+                                        onClick={() => handleAddToPlaceList(placeList.id)}
+                                        className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
+                                    >
+                                        加入此列表
+                                    </button>
+                                </div>
+                            </PlaceListCard>
+                        ))}
                     </div>
-                )}
-                <h2 className="text-xl font-bold mb-2 text-center">景點列表</h2>
-                <div className="grid grid-cols-2 gap-2">
-                    {placeLists.map((placeList) => (
-                        <PlaceListCard
-                            key={placeList.id}
-                            placeList={placeList}
-                            onDelete={handleDeletePlaceList}
-                            onUpdate={handleUpdatePlaceList}
-                            onDeletePlace={handleDeletePlace}
+                    <div className="mt-3">
+                        <input
+                            type="text"
+                            value={newPlaceListTitle}
+                            onChange={(e) => setNewPlaceListTitle(e.target.value)}
+                            placeholder="請新增景點列表標題，如: 札幌"
+                            className="w-full mb-2 p-2 border rounded"
+                        />
+                        <textarea
+                            value={newPlaceListNotes}
+                            onChange={(e) => setNewPlaceListNotes(e.target.value)}
+                            placeholder="可添加景點列表的備註"
+                            className="w-full mb-2 p-2 border rounded"
+                        />
+                        <button
+                            onClick={handleAddPlaceList}
+                            className="w-full p-2 bg-custom-reseda-green text-white rounded"
                         >
-                            <div className="flex justify-center">
-                                <button
-                                    onClick={() => handleAddToPlaceList(placeList.id)}
-                                    className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
-                                >
-                                    加入此列表
-                                </button>
-                            </div>
-                        </PlaceListCard>
-                    ))}
+                            新增景點列表
+                        </button>
+                    </div>
                 </div>
-                <div className="mt-3">
-                    <input
-                        type="text"
-                        value={newPlaceListTitle}
-                        onChange={(e) => setNewPlaceListTitle(e.target.value)}
-                        placeholder="請新增景點列表標題，如: 札幌"
-                        className="w-full mb-2 p-2 border rounded"
+                <div className="w-2/3 relative h-full">
+                    <GoogleMapComponent
+                            markerPosition={markerPosition}
+                            setMarkerPosition={setMarkerPosition}
+                            selectedPlace={selectedPlace}
+                            setSelectedPlace={setSelectedPlace}
+                            infoWindowOpen={infoWindowOpen}
+                            setInfoWindowOpen={setInfoWindowOpen}
+                            placeLists={placeLists}
+                            handleAddToPlaceList={handleAddToPlaceList}
                     />
-                    <textarea
-                        value={newPlaceListNotes}
-                        onChange={(e) => setNewPlaceListNotes(e.target.value)}
-                        placeholder="可添加景點列表的備註"
-                        className="w-full mb-2 p-2 border rounded"
-                    />
-                    <button
-                        onClick={handleAddPlaceList}
-                        className="w-full p-2 bg-custom-reseda-green text-white rounded"
-                    >
-                        新增景點列表
-                    </button>
+                    
                 </div>
-            </div>
-            <div className="w-2/3 relative h-full">
-                <GoogleMapComponent
-                        markerPosition={markerPosition}
-                        setMarkerPosition={setMarkerPosition}
-                        selectedPlace={selectedPlace}
-                        setSelectedPlace={setSelectedPlace}
-                        infoWindowOpen={infoWindowOpen}
-                        setInfoWindowOpen={setInfoWindowOpen}
-                        placeLists={placeLists}
-                        handleAddToPlaceList={handleAddToPlaceList}
-                />
-                
-            </div>
-            </div>
+                </div>
+        </Suspense>
         );
     };
     
