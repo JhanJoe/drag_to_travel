@@ -26,14 +26,14 @@ const MapPage: React.FC = () => {
     const [selectedPlace, setSelectedPlace] = useState<any>(null); // 存放選取的景點資訊
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
-    const searchParams = useSearchParams();
     const [tripId, setTripId] = useState<string | null>(null);
 
     useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
         const id = searchParams.get("tripId");
         setTripId(id);
-    }, [searchParams]);
-
+    }, []);
+    
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
