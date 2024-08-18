@@ -61,7 +61,11 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 lng: location.lng()
             };
             setMarkerPosition(position);
-            setSelectedPlace(place);
+            // setSelectedPlace(place);
+            setSelectedPlace({
+                ...place,
+                place_id: place.place_id // Ensure place_id is included
+            });
             setInfoWindowOpen(true);
             setSearchValue(place.name || "");
         
@@ -78,11 +82,17 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     };
 
     const isSpecificPlace = (result: google.maps.GeocoderResult) => {
-        // 檢查結果是否為具體地點而不僅是地址
+    // 檢查結果是否為具體地點而不僅是地址
+    /*point_of_interest: 具名搜尋點。一般來說是當地著名的實體。
+    establishment: 機構或場所。通常表示尚未歸類的地點
+    premise：具名地點，通常是建築物或具有共同名稱的建築物群
+    subpremise：具名地點底下的第一順位實體，通常是具有共同名稱的建築物群中的單一建築物
+    landmark 表示附近地點，做為導航輔助參考。*/
         return result.types.some(type => 
             ['point_of_interest', 'establishment', 'premise', 'subpremise', 'landamrk'].includes(type) 
         );
     };
+
 
     const handleMapClick = (event: google.maps.MapMouseEvent) => {
         event.stop(); //關閉內建資訊框

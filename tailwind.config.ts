@@ -15,6 +15,8 @@ const config: Config = {
         'custom-lapis':'#006696', // 自定義顏色 lapis lazuli 一種藍綠色
         'custom-yinmn-blue':'#315186', // 自定義顏色 yinmn blue 一種藍色
         'custom-earth-yellow':'#DDA15E', //看起來有點像淡土黃色
+        'custom-orange-yellow':'#FFB11B', //銘黃色
+        'custom-atomic-tangerine': '#FF9B71', //一種較飽和的粉橘色
       },
 
       backgroundImage: {

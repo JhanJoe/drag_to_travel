@@ -8,6 +8,11 @@ export interface Place {
     userId: string;
     tripId: string;
     placeListId: string;
+    GoogleMapPlaceId?: string;
+    rating?: number;
+    userRatingsTotal?: number;
+    openingHours?: string[];
+    website?: string;
 }
 
 export interface PlaceList {

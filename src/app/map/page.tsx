@@ -119,10 +119,15 @@ const MapPage: React.FC = () => {
                 address: selectedPlace.formatted_address,
                 latitude: selectedPlace.geometry.location.lat(),
                 longitude: selectedPlace.geometry.location.lng(),
-                note: selectedPlace.rating ? `Rating: ${selectedPlace.rating} (${selectedPlace.user_ratings_total} reviews)` : '',
+                note: '',
                 userId: user.uid,
                 tripId: tripId,
                 placeListId: placeListId,
+                GoogleMapPlaceId: selectedPlace.place_id,
+                rating: selectedPlace.rating,
+                userRatingsTotal: selectedPlace.user_ratings_total,
+                openingHours: selectedPlace.opening_hours?.weekday_text,
+                website: selectedPlace.website,
             };
     
             try {
@@ -182,7 +187,7 @@ const MapPage: React.FC = () => {
                         <div className="mb-2 p-2 border rounded-xl bg-custom-kame text-center">
                             <div className="text-2xl font-bold">{trip.name}</div>
                             <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
-                            <div>{trip.notes}</div>
+                            <div className="text-gray-500">{trip.notes}</div>
                         </div>
                     )}
                     <h2 className="text-xl font-bold mb-2 text-center">景點列表</h2>
