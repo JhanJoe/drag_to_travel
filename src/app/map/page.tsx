@@ -124,10 +124,10 @@ const MapPage: React.FC = () => {
                 tripId: tripId,
                 placeListId: placeListId,
                 GoogleMapPlaceId: selectedPlace.place_id,
-                rating: selectedPlace.rating,
-                userRatingsTotal: selectedPlace.user_ratings_total,
-                openingHours: selectedPlace.opening_hours?.weekday_text,
-                website: selectedPlace.website,
+                rating: selectedPlace.rating || '--',
+                userRatingsTotal: selectedPlace.user_ratings_total || '--',
+                openingHours: selectedPlace.opening_hours?.weekday_text || '--',
+                website: selectedPlace.website || '--',
             };
     
             try {
