@@ -5,33 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth, signOut, User, onAuthStateChanged,} from "../../../firebase-config";
 import AuthModal from "./AuthModal";
+import { useAuth } from "../contexts/AuthContext";
+import Image from "next/image";
 
 const Navbar: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
+  const [isHovered, setIsHovered] = useState(false); //icon hover效果
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-        router.push("/");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
+  
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      alert("登出成功");
       router.push("/");
     } catch (error: any) {
       console.error("Error signing out:", error);
-      alert(error.message);
     }
   };
 
@@ -41,16 +29,32 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 bg-custom-kame shadow-md flex justify-between items-center px-4 py-2 z-30">
-        <div className="text-2xl font-bold text-custom-yinmn-blue">
-          <Link href="/" className="hover:text-custom-reseda-green">旅遊 X 拖拉</Link>
+      <nav className="fixed top-0 left-0 right-0 bg-white shadow-md flex justify-between items-center px-4 py-2 z-30">
+        <div className="flex items-center text-2xl font-bold text-custom-reseda-green">
+          <Link href="/">
+              <div 
+                className="mr-2"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+            <Image 
+              src={isHovered ? "/images/icon-192-2.png" : "/images/icon-192.png"} 
+              alt="Icon" 
+              width={36} 
+              height={36} 
+              className="transition-transform duration-300 ease-in-out transform hover:scale-110"
+            />
+            </div>
+          </Link>
+
+          <Link href="/" className="hover:text-custom-atomic-tangerine">旅遊 X 拖拉</Link>
         </div>
         <div className="space-x-4">
           {user ? (
             <>
-              <span className="text-custom-yinmn-blue">歡迎，{user.email}</span>
-              <Link href="/trips" className="bg-custom-reseda-green p-2 rounded text-white hover:bg-custom-earth-yellow hover:text-white ">建立/選擇行程</Link>
-              <button onClick={handleSignOut} className="text-custom-yinmn-blue hover:underline" >會員登出</button>
+              <span className="text-custom-reseda-green">歡迎，{user.email}</span>
+              <Link href="/trips" className="bg-custom-kame p-2 rounded text-gray-600 hover:bg-custom-atomic-tangerine hover:text-white ">建立/選擇行程</Link>
+              <button onClick={handleSignOut} className="text-custom-reseda-green hover:text-custom-salmon" >會員登出</button>
             </>
           ) : (
             <>

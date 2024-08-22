@@ -69,13 +69,13 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             />
             <button
             onClick={handleSubmit}
-            className="bg-blue-500 text-white p-2 rounded w-full"
+            className="bg-custom-reseda-green text-white p-2 rounded w-full"
             >
             儲存
             </button>
             <button
             onClick={onClose}
-            className="mt-4 text-blue-500 w-full"
+            className="mt-4 w-full"
             >
             取消
             </button>

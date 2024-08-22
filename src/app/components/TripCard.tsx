@@ -28,7 +28,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit }) => {
     };
 
     return (
-        <div className="relative border p-3 text-center rounded-xl bg-custom-kame">
+        <div className="relative border-2 p-3 text-center rounded-xl shadow-md">
             <button
                 onClick={handleDelete}
                 className="absolute top-1 right-4 text-2xl "
@@ -41,12 +41,12 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit }) => {
             <div className="mt-3 flex justify-center">
                 <button
                     onClick={() => onEdit(trip)}
-                    className="bg-custom-reseda-green text-white p-2 rounded h-10 mr-3 flex items-center justify-center active:scale-95 active:shadow-inner"
+                    className="bg-custom-kame text-gray-600 p-2 rounded h-10 mr-3 flex items-center justify-center active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-110 transform"
                 >
                     編輯行程
                 </button>
                 <Link href={`/map?tripId=${trip.id}`}>
-                    <button className="bg-custom-earth-yellow text-white p-2 rounded h-10 flex items-center justify-center active:scale-95 active:shadow-inner">
+                    <button className="bg-custom-atomic-tangerine text-white p-2 rounded h-10 flex items-center justify-center active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-110 transform">
                         開始規劃
                     </button>
                 </Link>

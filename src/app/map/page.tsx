@@ -1,27 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense} from "react";
+import React, { useState, useEffect, useCallback} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../../../firebase-config";
 import { useRouter } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
 import { Place, PlaceList } from '../types/map';
 import GoogleMapComponent from "../components/GoogleMapComponent";
-
-interface Trip { 
-    id: string;
-    name: string;
-    startDate: string;
-    endDate: string;
-    notes: string;
-}
+import { useAuth } from "../contexts/AuthContext";
+import { useTripContext } from "../contexts/TripContext";
 
 const MapPage: React.FC = () => {  
-    const [placeLists, setPlaceLists] = useState<PlaceList[]>([]);
+    const { user } = useAuth();
+    const { trip, placeLists, fetchTripAndPlaceLists } = useTripContext();
     const [newPlaceListTitle, setNewPlaceListTitle] = useState("");
     const [newPlaceListNotes, setNewPlaceListNotes] = useState("");
-    const [user, setUser] = useState<any>(null);
-    const [trip, setTrip] = useState<Trip | null>(null);
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null); 
     const [selectedPlace, setSelectedPlace] = useState<any>(null); // 存放選取的景點資訊
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
@@ -35,55 +28,15 @@ const MapPage: React.FC = () => {
             setTripId(id);
         }
     }, []);
-    
+
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                if (tripId) {
-                    fetchTripDetails(tripId);
-                    fetchPlaceLists(currentUser.uid, tripId);
-                }
-            } else {
-                router.push("/");
-            }
-        });
-
-        // 當元件卸載時，清理firebase的監聽函數
-        return () => unsubscribe();
-    }, [tripId, router]);
-
-    const fetchTripDetails = async (tripId: string) => {
-        const tripDoc = doc(db, "trips", tripId);
-        const tripSnapshot = await getDoc(tripDoc);
-        if (tripSnapshot.exists()) {
-            const tripData = tripSnapshot.data() as Trip;
-            setTrip({ ...tripData, id: tripSnapshot.id });        
+        if (user && tripId) {
+            fetchTripAndPlaceLists(user.uid, tripId);
         }
-    };
-
-    const fetchPlaceLists = async (userId: string, tripId: string) => {
-        const placeListsCollection = collection(db, "placeLists");
-        const q = query(placeListsCollection, where("userId", "==", userId), where("tripId", "==", tripId));
-        const placeListsSnapshot = await getDocs(q);
-        const placeListsList = await Promise.all(placeListsSnapshot.docs.map(async (doc) => {
-            const data = doc.data() as Omit<PlaceList, 'id'>;
-            const placesCollection = collection(db, "places");
-            const placesQuery = query(placesCollection, where("userId", "==", userId), where("tripId", "==", tripId), where("placeListId", "==", doc.id));
-            const placesSnapshot = await getDocs(placesQuery);
-            const places = placesSnapshot.docs.map(placeDoc => ({
-                id: placeDoc.id,  
-                ...placeDoc.data()
-            } as Place));
-            console.log("Fetched places:", places);
-            return { id: doc.id, ...data, places };
-        }));
-
-        setPlaceLists(placeListsList);
-    };
+    }, [user, tripId, fetchTripAndPlaceLists]);
 
     const handleAddPlaceList = async () => {
-        if (newPlaceListTitle.trim() !== "" && tripId) {
+        if (newPlaceListTitle.trim() !== "" && tripId && user) {
         const newPlaceList = {
             title: newPlaceListTitle,
             notes: newPlaceListNotes,
@@ -92,28 +45,32 @@ const MapPage: React.FC = () => {
             
         };
         const docRef = await addDoc(collection(db, "placeLists"), newPlaceList);
-        setPlaceLists([...placeLists, { id: docRef.id, ...newPlaceList }]);
+        fetchTripAndPlaceLists(user.uid, tripId);
         setNewPlaceListTitle("");
         setNewPlaceListNotes("");
         }
     };
 
     const handleDeletePlaceList = async (id: string) => {
-        await deleteDoc(doc(db, "placeLists", id));
-        setPlaceLists(placeLists.filter(placeList => placeList.id !== id));
+        if (user && tripId) {
+            await deleteDoc(doc(db, "placeLists", id));
+            fetchTripAndPlaceLists(user.uid, tripId);
+        }
     };
 
     const handleUpdatePlaceList = async (id: string, updatedTitle: string, updatedNotes: string) => {
-        const placeListDoc = doc(db, "placeLists", id);
-        await updateDoc(placeListDoc, {
-            title: updatedTitle,
-            notes: updatedNotes,
-        });
-        setPlaceLists(placeLists.map(placeList => placeList.id === id ? { ...placeList, title: updatedTitle, notes: updatedNotes } : placeList));
+        if (user && tripId) {
+            const placeListDoc = doc(db, "placeLists", id);
+            await updateDoc(placeListDoc, {
+                title: updatedTitle,
+                notes: updatedNotes,
+            });
+            fetchTripAndPlaceLists(user.uid, tripId);
+        }
     };
 
     const handleAddToPlaceList = async (placeListId: string) => {
-        if (selectedPlace && tripId) {
+        if (selectedPlace && tripId && user) {
             const newPlace: Omit<Place, 'id'> = {
                 title: selectedPlace.name,
                 address: selectedPlace.formatted_address,
@@ -129,24 +86,10 @@ const MapPage: React.FC = () => {
                 openingHours: selectedPlace.opening_hours?.weekday_text || '--',
                 website: selectedPlace.website || '--',
             };
-    
-            try {
-                const placeRef = await addDoc(collection(db, "places"), newPlace);
-    
-                const addedPlace: Place = {
-                    ...newPlace,
-                    id: placeRef.id,
-                };
-    
-                console.log("Added place:", addedPlace); //TODO 待刪掉
 
-                setPlaceLists(prev => prev.map(placeList =>
-                    placeList.id === placeListId
-                        ? { ...placeList, places: [...(placeList.places || []), addedPlace] }
-                        : placeList
-                ));
-    
-                console.log("Place added successfully with ID:", placeRef.id); //TODO 待刪掉
+            try {
+                await addDoc(collection(db, "places"), newPlace);
+                fetchTripAndPlaceLists(user.uid, tripId);
             } catch (error) {
                 console.error("Error adding place:", error);
             }
@@ -154,37 +97,36 @@ const MapPage: React.FC = () => {
     };
     
     const handleDeletePlace = useCallback(async (placeId: string) => {
-        console.log("Attempting to delete place with ID:", placeId); //TODO 待刪掉
-        if (!placeId || typeof placeId !== 'string') {
+        if (!placeId || typeof placeId !== 'string' || !user || !tripId) {
             console.error("Invalid place ID");
             return;
         }
         try {
             await deleteDoc(doc(db, "places", placeId));
-            
-            setPlaceLists((prevPlaceLists) => 
-                prevPlaceLists.map((placeList) => ({
-                    ...placeList,
-                    places: placeList.places?.filter((place) => place.id !== placeId) || []
-                }))
-            );
-            
-            console.log("Place deleted successfully"); //TODO 待刪掉
+            fetchTripAndPlaceLists(user.uid, tripId);
+
         } catch (error) {
             console.error("Error deleting place:", error);
         }
-    }, []);
+    }, [user, tripId, fetchTripAndPlaceLists]);
 
-    if (!tripId) {
+    const handleStartPlanning = () => {
+        if (tripId) {
+            router.push(`/planning?tripId=${tripId}`);
+        } else {
+            console.error("Trip ID is missing!");
+        }
+    };
+
+    if (!tripId || !user) {
         return <div>Loading...</div>;
     }
 
     return (
-        <Suspense fallback={<div>Loading...</div>}>
             <div className="flex h-screen">
                 <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
                     {trip && (
-                        <div className="mb-2 p-2 border rounded-xl bg-custom-kame text-center">
+                        <div className="mb-2 p-2 border-2 shadow-md bg-white rounded-xl text-center">
                             <div className="text-2xl font-bold">{trip.name}</div>
                             <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
                             <div className="text-gray-500">{trip.notes}</div>
@@ -203,36 +145,47 @@ const MapPage: React.FC = () => {
                                 <div className="flex justify-center">
                                     <button
                                         onClick={() => handleAddToPlaceList(placeList.id)}
-                                        className="mt-2 p-1 bg-custom-reseda-green text-white rounded text-sm active:scale-95 active:shadow-inner"
+                                        className="mt-2 p-1 bg-custom-kame text-gray-600 rounded text-sm active:scale-95 active:shadow-inner"
                                     >
                                         將景點加入此列表
                                     </button>
                                 </div>
                             </PlaceListCard>
                         ))}
-                    </div>
-                    <div className="mt-3">
+                        
+                    <div className="relative mb-3 p-3 border rounded-xl bg-white overflow-hidden max-h-[250px] flex flex-col">
                         <input
-                            type="text"
-                            value={newPlaceListTitle}
-                            onChange={(e) => setNewPlaceListTitle(e.target.value)}
-                            placeholder="請新增景點列表標題，如：札幌"
-                            className="w-full mb-2 p-2 border rounded"
-                        />
-                        <input
-                            value={newPlaceListNotes}
-                            onChange={(e) => setNewPlaceListNotes(e.target.value)}
-                            placeholder="可添加景點列表的備註"
-                            className="w-full mb-2 p-2 border rounded"
-                        />
-                        <button
-                            onClick={handleAddPlaceList}
-                            className="w-full p-2 bg-custom-reseda-green text-white rounded active:scale-95 active:shadow-inner"
-                        >
-                            新增景點列表以儲存景點
-                        </button>
+                                type="text"
+                                value={newPlaceListTitle}
+                                onChange={(e) => setNewPlaceListTitle(e.target.value)}
+                                placeholder="新增景點列表標題"
+                                className="w-full mb-2 p-2 border rounded"
+                            />
+                            <textarea
+                                value={newPlaceListNotes}
+                                onChange={(e) => setNewPlaceListNotes(e.target.value)}
+                                placeholder="景點列表的備註"
+                                className="w-full mb-2 p-2 border rounded"
+                            />
+                            <div className="flex justify-center">
+                                <button
+                                    onClick={handleAddPlaceList}
+                                    className="w-[120px] p-1 text-sm bg-custom-kame text-gray-600 rounded active:scale-95 active:shadow-inner"
+                                >
+                                    新增景點列表
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                    <button 
+                        onClick={handleStartPlanning}
+                        className="mt-4 p-2 w-full bg-custom-atomic-tangerine text-white rounded active:scale-95 active:shadow-inner">
+                        開始行程規劃！
+                    </button>
+                    
                 </div>
+
                 <div className="w-2/3 relative h-full">
                     <GoogleMapComponent
                             markerPosition={markerPosition}
@@ -246,8 +199,7 @@ const MapPage: React.FC = () => {
                     />
                     
                 </div>
-                </div>
-        </Suspense>
+            </div>
         );
     };
     

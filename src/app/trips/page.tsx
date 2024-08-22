@@ -94,7 +94,7 @@ const TripsPage: React.FC = () => {
     return (
         <div className="p-4">
             <div
-                className="border p-4 mb-4 cursor-pointer text-center rounded-md "
+                className="border-2 shadow-md p-4 mb-4 cursor-pointer text-center rounded-md hover:text-custom-atomic-tangerine "
                 onClick={() => {
                 setCurrentTrip(null);
                 setShowModal(true);

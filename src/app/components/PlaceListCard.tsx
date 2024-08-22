@@ -12,7 +12,7 @@ interface PlaceListCardProps {
 }
 
 const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, onDeletePlace, children }) => {
-    console.log("PlaceList in PlaceListCard:", placeList);
+    console.log("PlaceList in PlaceListCard:", placeList); //TODO 待刪
     const [isEditing, setIsEditing] = useState(false);
     const [updatedTitle, setUpdatedTitle] = useState(placeList.title);
     const [updatedNotes, setUpdatedNotes] = useState(placeList.notes);
@@ -60,7 +60,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     />
                     <button
                         onClick={handleSave}
-                        className="w-full p-2 bg-blue-500 text-white rounded"
+                        className="w-full p-1 bg-custom-atomic-tangerine text-white rounded"
                     >
                         儲存
                     </button>

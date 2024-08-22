@@ -18,17 +18,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const [signUpEmail, setSignUpEmail] = useState("");
     const [signUpPassword, setSignUpPassword] = useState("");
 
+    const [statusMessage, setStatusMessage] = useState("  "); // 註冊/登入後顯示訊息
+    const [statusColor, setStatusColor] = useState("text-green-500"); // 訊息顏色，預設為綠色（成功）；反之為紅色（error）
+
     const handleSignUp = async (event: React.FormEvent) => {
         event.preventDefault();
         try {
             await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
-            alert("註冊成功");
+            setStatusMessage("註冊成功");
+            setStatusColor("text-green-500"); 
             setSignUpEmail("");
             setSignUpPassword("");
             setIsSignUp(false);
         } catch (error: any) {
             console.error("Error signing up:", error);
-            alert(error.message);
+            setStatusMessage(`註冊失敗: ${error.message}`);
+            setStatusColor("text-red-500"); 
         }
     };
 
@@ -36,13 +41,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         event.preventDefault();
         try {
             await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
-            alert("登入成功");
-            setSignInEmail("");
-            setSignInPassword("");
-            onClose();
-            } catch (error: any) {
+            setStatusMessage("登入成功，畫面即將跳轉...");
+            setStatusColor("text-green-500");
+            // setSignInEmail(""); // 清空欄位
+            // setSignInPassword(""); // 清空欄位
+            setTimeout(() => {
+                onClose();
+            }, 2000);
+            window.location.href = '/trips';
+        } catch (error: any) {
             console.error("Error signing in:", error);
-            alert(error.message);
+            setStatusMessage(`登入失敗: ${error.message}`);
+            setStatusColor("text-red-500"); 
             }
     };
 
@@ -69,14 +79,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 />
                 <button
                     type="submit"
-                    className="bg-custom-kame text-custom-dark-green font-bold py-2 rounded"
+                    className="bg-custom-reseda-green text-white font-bold py-2 rounded"
                 >
                     註冊
                 </button>
+                {statusMessage && (
+                    <p className={`mt-2 ${statusColor} text-center`}>{statusMessage}</p>
+                )}
                 <button
                     type="button"
                     onClick={() => setIsSignUp(false)}
-                    className="mt-6 text-custom-dark-green"
+                    className="mt-3 text-gray-500"
                 >
                     已有帳號？ 請點擊登入
                 </button>
@@ -98,13 +111,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 value={signInPassword}
                 onChange={(e) => setSignInPassword(e.target.value)}
             />
-            <button type="submit" className="bg-custom-kame font-bold py-2 rounded">
+            <button type="submit" className="bg-custom-reseda-green text-white font-bold py-2 rounded">
                 登入
             </button>
+            {statusMessage && (
+                <p className={`mt-2 justify-center ${statusColor} text-center`}>{statusMessage}</p>
+            )}
             <button
                 type="button"
                 onClick={() => setIsSignUp(true)}
-                className="mt-6 text-custom-dark-green"
+                className="mt-3 text-gray-500"
             >
                 沒有帳號？ 請點擊註冊
             </button>

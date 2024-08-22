@@ -61,10 +61,9 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 lng: location.lng()
             };
             setMarkerPosition(position);
-            // setSelectedPlace(place);
             setSelectedPlace({
                 ...place,
-                place_id: place.place_id // Ensure place_id is included
+                place_id: place.place_id 
             });
             setInfoWindowOpen(true);
             setSearchValue(place.name || "");
