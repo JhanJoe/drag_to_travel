@@ -5,9 +5,9 @@ import { Place, PlaceList } from '../types/map';
 
 interface PlaceListCardProps {
     placeList: PlaceList & { places?: Place[] };
-    onDelete: (id: string) => void;
-    onUpdate: (id: string, updatedTitle: string, updatedNotes: string) => void;
-    onDeletePlace: (placeId: string) => void;
+    onDelete?: (id: string) => void; //可選參數：在planning頁面不使用
+    onUpdate?: (id: string, updatedTitle: string, updatedNotes: string) => void; //可選參數：在planning頁面不使用
+    onDeletePlace?: (placeId: string, placeListId: string) => void; //可選參數：在planning頁面不使用
     children?: React.ReactNode;    
 }
 
@@ -18,12 +18,14 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
     const [updatedNotes, setUpdatedNotes] = useState(placeList.notes);
 
     const handleSave = () => {
-        onUpdate(placeList.id, updatedTitle, updatedNotes);
+        if (onUpdate) {
+            onUpdate(placeList.id, updatedTitle, updatedNotes);
+        }
         setIsEditing(false);
     };
 
     const handleDelete = () => {
-        if (confirm("你確定要刪除此行程嗎？")) {
+        if (onDelete && confirm("你確定要刪除此行程嗎？")) {
             onDelete(placeList.id);
         }
     };
@@ -67,18 +69,23 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                 </>
             ) : (
                 <>
-                    <button
-                        onClick={handleDelete}
-                        className="absolute top-1 right-3 text-2xl text-gray-400" title="刪除行程"
-                    >
-                        ×
-                    </button>
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="absolute top-3 right-8 text-xl text-gray-400" title="編輯行程"
-                    >
-                        <FaEdit />
-                    </button>
+                    {onDelete && (
+                        <button
+                            onClick={handleDelete}
+                            className="absolute top-1 right-3 text-2xl text-gray-400" title="刪除行程"
+                        >
+                            ×
+                        </button>
+                    )}
+
+                    {onUpdate && (
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="absolute top-3 right-8 text-xl text-gray-400" title="編輯行程"
+                        >
+                            <FaEdit />
+                        </button>
+                    )}
 
                     <div className="text-lg font-bold text-center">{placeList.title}</div>
                     <div className="text-center text-gray-400 text-sm">{placeList.notes}</div>
@@ -88,21 +95,22 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     return (
                         <div key={place.id} className="flex items-center justify-between text-center text-gray-600">
                             <div className="truncate" title={place.title}>{place.title}</div>
-                            <button
-                                onClick={() => {
-                                    console.log("Deleting place:", place);  //TODO
-                                    if (place.id) {
-                                        onDeletePlace(place.id); 
-                                    } else {
-                                        console.error("Place id is undefined:", place);
-                                    }
-                                }}
-                                className="text-red-500"
-                                title="刪除此景點"
-                            >
-                                ×
-                            </button>
-                            
+                            {onDeletePlace && (
+                                <button
+                                    onClick={() => {
+                                        console.log("Deleting place:", place);  //TODO
+                                        if (place.id) {
+                                            onDeletePlace(place.id, placeList.id); 
+                                        } else {
+                                            console.error("Place id is undefined:", place);
+                                        }
+                                    }}
+                                    className="text-red-500"
+                                    title="刪除此景點"
+                                >
+                                    ×
+                                </button>
+                            )}
                         </div>
                             );
                         })}

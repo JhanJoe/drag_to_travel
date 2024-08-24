@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { collection,addDoc, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
 import { auth, onAuthStateChanged, db } from "../../../firebase-config";
 import TripCard from "../components/TripCard";
 import TripModal from "../components/TripModal";
+import { useLoading } from "../contexts/LoadingContext";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Trip {
     id: string;
@@ -20,35 +22,59 @@ const TripsPage: React.FC = () => {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
-    const [user, setUser] = useState<any>(null);
     const router = useRouter();
+    const { user, loading } = useAuth();
+    const { startLoading, stopLoading } = useLoading(); // 使用LoadingContext
+    const hasFetchedRef = useRef(false); //使用 useRef 來追蹤是否已經執行過 fetch
 
-    useEffect(() => {
-        const isAuthenticated = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setUser(user);
+    const fetchTrips = useCallback(async (userId: string) => {
+        if (hasFetchedRef.current) return;
+        hasFetchedRef.current = true;
+
+        try {
+            console.log("執行fetchtrip函式"); //TODO 待刪
+
+            const tripsCollection = collection(db, "trips");
+            const q = query(tripsCollection, where("userId", "==", userId));
+            const tripsSnapshot = await getDocs(q);
+            let tripsList = tripsSnapshot.docs.map(doc => {
+                const data = doc.data() as Omit<Trip, 'id'>;
+                return { id: doc.id, ...data };
+            });
+
+            tripsList = tripsList.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+            setTrips(tripsList);
+        } catch (error) {
+            console.error("Error fetching trips:", error);
+        } finally {             
+            console.log("trippage-執行完fetchtrip, 結束loading動畫") //TODO 待刪
+            stopLoading();
+        }
+    }, [stopLoading]);
+
+    useEffect(() => {        
+        const isLoadingFromLogin = localStorage.getItem('isLoading') === 'true';
+            if (isLoadingFromLogin) {
+                console.log("開始執行trippage-startloading");  //TODO 待刪
+                startLoading("載入行程資料中...");
+
+                console.log("trippage-移除localstorage中的isLoading");  //TODO 待刪
+                localStorage.removeItem('isLoading');
+            }
+
+            if (!loading && user) {
                 fetchTrips(user.uid);
-            } else {
+            } else if (!loading && !user) {
+                stopLoading();
                 router.push("/");
             }
-        });
 
-        return () => isAuthenticated();
-    }, [router]);
-
-    const fetchTrips = async (userId: string) => {
-        const tripsCollection = collection(db, "trips");
-        const q = query(tripsCollection, where("userId", "==", userId));
-        const tripsSnapshot = await getDocs(q);
-        let tripsList = tripsSnapshot.docs.map(doc => {
-            const data = doc.data() as Omit<Trip, 'id'>;
-            return { id: doc.id, ...data };
-        });
-
-        tripsList = tripsList.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-
-        setTrips(tripsList);
-    };
+        return () => {
+            console.log("trippage-移除localstorage中的isLoading");  //TODO 待刪
+            localStorage.removeItem('isLoading');
+        };
+    }, [user, loading, router, fetchTrips, startLoading, stopLoading]);    
 
     const handleAddTrip = async (trip: any) => {
         const docRef = await addDoc(collection(db, "trips"), trip);
@@ -68,6 +94,11 @@ const TripsPage: React.FC = () => {
     };
 
     const handleSaveTrip = async (trip: Trip) => {
+        if (!user) {
+            console.error("尚未登入");
+            return;
+        }
+
         if (trip.id) {
             // 更新已經有的行程
             const tripRef = doc(db, "trips", trip.id);

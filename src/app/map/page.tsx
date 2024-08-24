@@ -12,7 +12,7 @@ import { useTripContext } from "../contexts/TripContext";
 
 const MapPage: React.FC = () => {  
     const { user } = useAuth();
-    const { trip, placeLists, fetchTripAndPlaceLists } = useTripContext();
+    const { trip, placeLists, fetchTripAndPlaceLists, updatePlaceLists } = useTripContext();
     const [newPlaceListTitle, setNewPlaceListTitle] = useState("");
     const [newPlaceListNotes, setNewPlaceListNotes] = useState("");
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null); 
@@ -20,6 +20,7 @@ const MapPage: React.FC = () => {
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
     const [tripId, setTripId] = useState<string | null>(null);
+    const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -85,38 +86,56 @@ const MapPage: React.FC = () => {
                 userRatingsTotal: selectedPlace.user_ratings_total || '--',
                 openingHours: selectedPlace.opening_hours?.weekday_text || '--',
                 website: selectedPlace.website || '--',
+                plannedDate: '', // 初始值為空字串
+                plannedDateOrder: null, 
             };
 
+            // try {
+            //     await addDoc(collection(db, "places"), newPlace);
+            //     fetchTripAndPlaceLists(user.uid, tripId);
+            // } catch (error) {
+            //     console.error("Error adding place:", error);
+            // }
             try {
-                await addDoc(collection(db, "places"), newPlace);
-                fetchTripAndPlaceLists(user.uid, tripId);
+                const docRef = await addDoc(collection(db, "places"), newPlace);
+                const newPlaceWithId = { ...newPlace, id: docRef.id };
+    
+                // 直接更新狀態
+                updatePlaceLists(prevPlaceLists =>
+                    prevPlaceLists.map((placeList) =>
+                        placeList.id === placeListId
+                            ? { ...placeList, places: [...(placeList.places || []), newPlaceWithId] }
+                            : placeList
+                    )
+                );
             } catch (error) {
                 console.error("Error adding place:", error);
             }
         }
     };
     
-    const handleDeletePlace = useCallback(async (placeId: string) => {
+    const handleDeletePlace = useCallback(async (placeId: string, placeListId: string) => {
         if (!placeId || typeof placeId !== 'string' || !user || !tripId) {
             console.error("Invalid place ID");
             return;
         }
         try {
             await deleteDoc(doc(db, "places", placeId));
-            fetchTripAndPlaceLists(user.uid, tripId);
+            // fetchTripAndPlaceLists(user.uid, tripId);
+
+            // 直接更新狀態
+            updatePlaceLists(prevPlaceLists =>
+                prevPlaceLists.map((placeList) =>
+                    placeList.id === placeListId
+                        ? { ...placeList, places: placeList.places?.filter((place) => place.id !== placeId) }
+                        : placeList
+                )
+            );
 
         } catch (error) {
             console.error("Error deleting place:", error);
         }
-    }, [user, tripId, fetchTripAndPlaceLists]);
-
-    const handleStartPlanning = () => {
-        if (tripId) {
-            router.push(`/planning?tripId=${tripId}`);
-        } else {
-            console.error("Trip ID is missing!");
-        }
-    };
+    }, [user, tripId, updatePlaceLists]);
 
     if (!tripId || !user) {
         return <div>Loading...</div>;
@@ -124,7 +143,27 @@ const MapPage: React.FC = () => {
 
     return (
             <div className="flex h-screen">
+
                 <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
+                    <div className="flex mb-4">
+                        <div
+                            onMouseEnter={() => setHovered(false)}
+                            onClick={() => router.push(`/map?tripId=${tripId}`)}
+                            className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                            ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                        >
+                            地圖
+                        </div>
+                        <div
+                            onMouseEnter={() => setHovered(true)}
+                            onClick={() => router.push(`/planning?tripId=${tripId}`)}
+                            className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                            ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                        >
+                            規劃
+                        </div>
+                    </div>
+
                     {trip && (
                         <div className="mb-2 p-2 border-2 shadow-md bg-white rounded-xl text-center">
                             <div className="text-2xl font-bold">{trip.name}</div>
@@ -177,12 +216,6 @@ const MapPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-
-                    <button 
-                        onClick={handleStartPlanning}
-                        className="mt-4 p-2 w-full bg-custom-atomic-tangerine text-white rounded active:scale-95 active:shadow-inner">
-                        開始行程規劃！
-                    </button>
                     
                 </div>
 

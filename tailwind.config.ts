@@ -48,6 +48,7 @@ const config: Config = {
       animation: {
         'fade-in-out': 'fade-in-out 28s infinite',
       },
+
     },
   },
   plugins: [],

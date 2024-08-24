@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../../firebase-config';
 
@@ -40,6 +40,7 @@ interface TripContextType {
     trip: Trip | null;
     placeLists: PlaceList[];
     fetchTripAndPlaceLists: (userId: string, tripId: string) => Promise<void>;
+    updatePlaceLists: (updateFn: (prevPlaceLists: PlaceList[]) => PlaceList[]) => void;
 }
 
 const TripContext = createContext<TripContextType | undefined>(undefined);
@@ -52,12 +53,29 @@ export const useTripContext = () => {
     return context;
 };
 
+const CACHE_DURATION = 5 * 60 * 1000; 
+
 export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [trip, setTrip] = useState<Trip | null>(null);
     const [placeLists, setPlaceLists] = useState<PlaceList[]>([]);
+    const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-    const fetchTripAndPlaceLists = async (userId: string, tripId: string) => {
-        // Fetch trip details
+    type PlacesMap = Map<string, Place[]>;
+
+    const updatePlaceLists = useCallback((updateFn: (prevPlaceLists: PlaceList[]) => PlaceList[]) => {
+        setPlaceLists(prevPlaceLists => updateFn(prevPlaceLists));
+    }, []);
+
+    const fetchTripAndPlaceLists = useCallback(async (userId: string, tripId: string, forceRefresh = false) => {
+        console.log("使用 fetchTripAndPlaceLists 函式", { userId, tripId, forceRefresh }); //TODO 待刪
+        
+        const now = Date.now();
+        if (!forceRefresh && now - lastFetchTime < CACHE_DURATION) {
+            console.log("使用TripContext快取資料");  //TODO 待刪
+            return; // 使用快取資料
+        }
+
+        // fetch 行程
         const tripDoc = doc(db, 'trips', tripId);
         const tripSnapshot = await getDoc(tripDoc);
         if (tripSnapshot.exists()) {
@@ -65,29 +83,50 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setTrip({ ...tripData, id: tripSnapshot.id });
         }
 
-        // Fetch place lists and their associated places
+        // fetch 景點列表和景點
         const placeListsCollection = collection(db, 'placeLists');
         const q = query(placeListsCollection, where('userId', '==', userId), where('tripId', '==', tripId));
         const placeListsSnapshot = await getDocs(q);
-        const placeListsList = await Promise.all(
-            placeListsSnapshot.docs.map(async (doc) => {
-                const data = doc.data() as Omit<PlaceList, 'id'>;
-                const placesCollection = collection(db, 'places');
-                const placesQuery = query(placesCollection, where('userId', '==', userId), where('tripId', '==', tripId), where('placeListId', '==', doc.id));
-                const placesSnapshot = await getDocs(placesQuery);
-                const places = placesSnapshot.docs.map((placeDoc) => ({
-                    id: placeDoc.id,
-                    ...placeDoc.data(),
-                } as Place));
-                return { id: doc.id, ...data, places };
-            })
-        );
+        
+        const placesCollection = collection(db, 'places');
+        const placesQuery = query(placesCollection, where('userId', '==', userId), where('tripId', '==', tripId));
+        const placesSnapshot = await getDocs(placesQuery);
+
+        // 然後修改 placesMap 的初始化
+        const placesMap: PlacesMap = new Map();
+        placesSnapshot.docs.forEach(doc => {
+            const place = { id: doc.id, ...doc.data() } as Place;
+            if (!placesMap.has(place.placeListId)) {
+                placesMap.set(place.placeListId, []);
+            }
+            const placeList = placesMap.get(place.placeListId);
+            if (placeList) {
+                placeList.push(place);
+            }
+        });
+
+        const placeListsList = placeListsSnapshot.docs.map(doc => {
+            const data = doc.data() as Omit<PlaceList, 'id'>;
+            return { 
+                id: doc.id, 
+                ...data, 
+                places: placesMap.get(doc.id) || [] 
+            };
+        });
 
         setPlaceLists(placeListsList);
-    };
+        setLastFetchTime(now);
+    }, [lastFetchTime]); 
+
+    const contextValue = useMemo(() => ({
+        trip,
+        placeLists,
+        fetchTripAndPlaceLists,
+        updatePlaceLists  // 給map更新行程和景點列表用的
+    }), [trip, placeLists, fetchTripAndPlaceLists, updatePlaceLists]);
 
     return (
-        <TripContext.Provider value={{ trip, placeLists, fetchTripAndPlaceLists }}>
+        <TripContext.Provider value={contextValue}>
             {children}
         </TripContext.Provider>
     );
