@@ -9,10 +9,12 @@ import { Place, PlaceList } from '../types/map';
 import GoogleMapComponent from "../components/GoogleMapComponent";
 import { useAuth } from "../contexts/AuthContext";
 import { useTripContext } from "../contexts/TripContext";
+import { useLoading } from "../contexts/LoadingContext";
 
 const MapPage: React.FC = () => {  
     const { user } = useAuth();
     const { trip, placeLists, fetchTripAndPlaceLists, updatePlaceLists } = useTripContext();
+    const { startLoading, stopLoading } = useLoading();  //loading動畫
     const [newPlaceListTitle, setNewPlaceListTitle] = useState("");
     const [newPlaceListNotes, setNewPlaceListNotes] = useState("");
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null); 
@@ -32,9 +34,10 @@ const MapPage: React.FC = () => {
 
     useEffect(() => {
         if (user && tripId) {
-            fetchTripAndPlaceLists(user.uid, tripId);
+            startLoading("正在載入資料...");
+            fetchTripAndPlaceLists(user.uid, tripId).finally(() => stopLoading());
         }
-    }, [user, tripId, fetchTripAndPlaceLists]);
+    }, [user, tripId, fetchTripAndPlaceLists, startLoading, stopLoading]);
 
     const handleAddPlaceList = async () => {
         if (newPlaceListTitle.trim() !== "" && tripId && user) {
@@ -100,7 +103,7 @@ const MapPage: React.FC = () => {
                 const docRef = await addDoc(collection(db, "places"), newPlace);
                 const newPlaceWithId = { ...newPlace, id: docRef.id };
     
-                // 直接更新狀態
+                // 直接更新狀態  TODO 還是應該重fetch資料庫資料？
                 updatePlaceLists(prevPlaceLists =>
                     prevPlaceLists.map((placeList) =>
                         placeList.id === placeListId
@@ -123,7 +126,7 @@ const MapPage: React.FC = () => {
             await deleteDoc(doc(db, "places", placeId));
             // fetchTripAndPlaceLists(user.uid, tripId);
 
-            // 直接更新狀態
+            // 直接更新狀態 TODO 還是應該重fetch資料庫資料？
             updatePlaceLists(prevPlaceLists =>
                 prevPlaceLists.map((placeList) =>
                     placeList.id === placeListId

@@ -5,13 +5,15 @@ import { useTripContext } from "../contexts/TripContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
+import { useLoading } from "../contexts/LoadingContext";
+
 
 const PlanPage: React.FC = () => {  
     const { user, loading } = useAuth();
     const { trip, placeLists, fetchTripAndPlaceLists } = useTripContext();
+    const { startLoading, stopLoading } = useLoading(); //loading動畫
     const router = useRouter();
     const [tripId, setTripId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
 
     useEffect(() => {
@@ -24,10 +26,10 @@ const PlanPage: React.FC = () => {
     
     useEffect(() => {
         if (tripId && user) {
-            fetchTripAndPlaceLists(user.uid, tripId);
-            setIsLoading(false);
+            startLoading("正在載入資料...");
+            fetchTripAndPlaceLists(user.uid, tripId).finally(() => stopLoading());
         }
-    }, [tripId, user, fetchTripAndPlaceLists]);
+    }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading]);
 
     const generateDateRange = (startDate: string, endDate: string) => {
         const start = new Date(startDate);
@@ -45,7 +47,7 @@ const PlanPage: React.FC = () => {
 
     const tripDateRange = trip ? generateDateRange(trip.startDate, trip.endDate) : [];
 
-    if (loading || isLoading) {
+    if (loading) {
         return <div>Loading...</div>;
     }
 
@@ -63,18 +65,18 @@ const PlanPage: React.FC = () => {
             <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
                 <div className="flex mb-4">
                     <div
-                        onMouseEnter={() => setHovered(true)}
+                        onMouseEnter={() => setHovered(false)}
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
                         className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                        ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l hover:bg-custom-atomic-tangerine hover:text-white`}
+                        ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
                         地圖
                     </div>
                     <div
-                        onMouseEnter={() => setHovered(false)}
+                        onMouseEnter={() => setHovered(true)}
                         onClick={() => router.push(`/planning?tripId=${tripId}`)}
                         className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                        ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r hover:bg-custom-atomic-tangerine hover:text-white`}
+                        ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
                         規劃
                     </div>
