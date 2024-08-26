@@ -4,30 +4,40 @@ import React, { useState, useEffect } from "react";
 import { useTripContext } from "../contexts/TripContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import {
+    Trip,
+    Place,
+    PlaceList,
+    ItineraryWithTime,
+} from "../types/tripAndPlace";
 import PlaceListCard from "../components/PlaceListCard";
 import { useLoading } from "../contexts/LoadingContext";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-
-const PlanPage: React.FC = () => {  
+const PlanPage: React.FC = () => {
     const { user, loading } = useAuth();
     const { trip, placeLists, fetchTripAndPlaceLists } = useTripContext();
     const { startLoading, stopLoading } = useLoading(); //loading動畫
     const router = useRouter();
     const [tripId, setTripId] = useState<string | null>(null);
     const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
+    const [itineraries, setItineraries] = useState<Record<string, Place[]>>({}); //管理每天日程的狀態
+    const [itineraryTime, setItineraryTime] = useState<Record<string, ItineraryWithTime[]>>({}); //每個行程時間
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
             const searchParams = new URLSearchParams(window.location.search);
             const id = searchParams.get("tripId");
             setTripId(id);
         }
     }, []);
-    
+
     useEffect(() => {
         if (tripId && user) {
             startLoading("正在載入資料...");
-            fetchTripAndPlaceLists(user.uid, tripId).finally(() => stopLoading());
+            fetchTripAndPlaceLists(user.uid, tripId).finally(() =>
+                stopLoading()
+            );
         }
     }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading]);
 
@@ -45,14 +55,79 @@ const PlanPage: React.FC = () => {
         return dateArray;
     };
 
-    const tripDateRange = trip ? generateDateRange(trip.startDate, trip.endDate) : [];
+    const tripDateRange = trip
+        ? generateDateRange(trip.startDate, trip.endDate)
+        : [];
+
+    const onDragEnd = (result: any) => {
+        const { source, destination } = result;
+
+        if (!destination) {
+            return;
+        }
+
+        // 來源列表、目標列表
+        let sourceList: Place[] | undefined;
+        let destList: Place[] | undefined;
+
+        if (source.droppableId in itineraries) {
+            sourceList = itineraries[source.droppableId];
+        } else {
+            const placeList = placeLists.find(
+                (pl) => pl.id === source.droppableId
+            );
+            sourceList = placeList?.places;
+        }
+
+        if (destination.droppableId in itineraries) {
+            destList = itineraries[destination.droppableId];
+        } else {
+            destList = itineraries[destination.droppableId] = [];
+        }
+
+        if (!sourceList || !destList) {
+            console.error("Source or destination list not found.");
+            return;
+        }
+
+        // 從來源列表中移除拖曳項目
+        const [movedItem] = sourceList.splice(source.index, 1);
+
+        if (!movedItem) {
+            console.error("Moved item not found.");
+            return;
+        }
+
+        // 添加到目標列表
+        destList.splice(destination.index, 0, movedItem);
+
+        setItineraries({
+            ...itineraries,
+            [source.droppableId]: sourceList,
+            [destination.droppableId]: destList,
+        });
+    };
+
+    const handleTimeChange = (
+        dateKey: string,
+        placeId: string,
+        time: string
+    ) => {
+        setItineraryTime((prev) => ({
+            ...prev,
+            [dateKey]: {
+                ...prev[dateKey],
+                [placeId]: time,
+            },
+        }));
+    };
 
     if (loading) {
         return <div>Loading...</div>;
     }
 
     if (!user) {
-        router.push('/');
+        router.push("/");
         return null;
     }
 
@@ -62,21 +137,32 @@ const PlanPage: React.FC = () => {
 
     return (
         <div className="flex h-screen">
+            {/* 左邊區塊：小地圖 */}
             <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
                 <div className="flex mb-4">
                     <div
-                        onMouseEnter={() => setHovered(false)}
+                        onMouseEnter={() => setHovered(true)}
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
                         className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                        ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                        ${
+                            hovered
+                                ? "bg-custom-atomic-tangerine text-white"
+                                : "bg-gray-200 text-gray-700"
+                        } rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
                         地圖
                     </div>
                     <div
-                        onMouseEnter={() => setHovered(true)}
-                        onClick={() => router.push(`/planning?tripId=${tripId}`)}
+                        onMouseEnter={() => setHovered(false)}
+                        onClick={() =>
+                            router.push(`/planning?tripId=${tripId}`)
+                        }
                         className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                        ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                        ${
+                            !hovered
+                                ? "bg-custom-atomic-tangerine text-white"
+                                : "bg-gray-200 text-gray-700"
+                        } rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
                         規劃
                     </div>
@@ -91,7 +177,7 @@ const PlanPage: React.FC = () => {
                 )}
                 {/* <h2 className="text-xl font-bold mb-2 text-center">景點列表</h2>
                 <div className="grid grid-cols-2 gap-2"> */}
-                    {/* {placeLists.map((placeList) => (
+                {/* {placeLists.map((placeList) => (
                         <PlaceListCard
                             key={placeList.id}
                             placeList={placeList}
@@ -101,64 +187,182 @@ const PlanPage: React.FC = () => {
                         />
                     ))} */}
                 {/* </div> */}
-
             </div>
 
+            {/* 右邊區塊：規劃 */}
             <div className="w-2/3 relative h-full flex flex-col">
-                {/* 右上半部：景點列表 */}
-                <div className="flex-2 overflow-x-scroll custom-scroll whitespace-nowrap p-4">
-                    <div className="flex">
-                        {placeLists.map((placeList) => (
-                            <div key={placeList.id} className="flex-shrink-0 w-40 mr-4">
-                                <PlaceListCard
-                                    placeList={placeList}
-                                />
-                            </div>
-                        ))}
+                <DragDropContext onDragEnd={onDragEnd}>
+                    {/* 右上半部：景點列表 */}
+                    <div className="flex-2 overflow-hidden p-4 basis-2/5 max-h-2/5">
+                        <div className="flex overflow-x-scroll custom-scrollbar-x whitespace-nowrap mb-2">
+                            {placeLists.map((placeList) => (
+                                <Droppable
+                                    droppableId={placeList.id}
+                                    direction="vertical"
+                                    key={placeList.id}
+                                >
+                                    {(provided) => (
+                                        <div
+                                            ref={provided.innerRef}
+                                            {...provided.droppableProps}
+                                            className="flex-shrink-0 w-40 mr-4 p-4 border rounded-xl bg-white h-[250px] overflow-y-auto custom-scrollbar-y"
+                                        >
+                                            <div className="text-lg font-bold mb-2 text-center">
+                                                {placeList.title}
+                                            </div>
+                                            {placeList.places?.map(
+                                                (place, index) => (
+                                                    <Draggable
+                                                        key={place.id}
+                                                        draggableId={place.id}
+                                                        index={index}
+                                                    >
+                                                        {(provided) => (
+                                                            <div
+                                                                ref={
+                                                                    provided.innerRef
+                                                                }
+                                                                {...provided.draggableProps}
+                                                                {...provided.dragHandleProps}
+                                                                className="p-2 mb-2 border rounded bg-gray-200"
+                                                            >
+                                                                <div
+                                                                    className="text-sm font-bold truncate"
+                                                                    title={
+                                                                        place.title
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        place.title
+                                                                    }
+                                                                </div>
+                                                                <div className="text-xs text-gray-400">
+                                                                    Rating:{" "}
+                                                                    {
+                                                                        place.rating
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </Draggable>
+                                                )
+                                            )}
+                                            {provided.placeholder}
+                                        </div>
+                                    )}
+                                </Droppable>
+                            ))}
+                        </div>
                     </div>
-                </div>
-                
-                <div className="w-4/5 border mx-auto bg-gray-300 my-2"></div>
 
-                {/* 右下半部：行程規劃 */}
-                <div className="flex-3 overflow-x-scroll custom-scroll whitespace-nowrap p-4 ">
-                    {tripDateRange.map((date) => (
-                        <div key={date.toISOString()} className="inline-block w-64 p-2 mr-4 border rounded-xl bg-white">
-                            <div className="text-center font-bold">
-                                {date.toLocaleDateString('zh-TW', {
-                                        year: 'numeric',
-                                        month: '2-digit',
-                                        day: '2-digit'
+                    {/* 右下半部：行程規劃 */}
+                    <div className="relative flex-3 basis-3/5 max-h-3/5 flex-grow overflow-hidden">
+                        <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mb-2 overflow-y-auto custom-scrollbar-y">
+                            <div className="flex flex-row align-top h-full ml-4">
+                                {tripDateRange.map((date) => {
+                                    const dateKey = date
+                                        .toISOString()
+                                        .split("T")[0];
+                                    const tasksForDate =
+                                        itineraries[dateKey] || [];
+
+                                    return (
+                                        <Droppable
+                                            droppableId={dateKey}
+                                            key={dateKey}
+                                        >
+                                            {(provided) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.droppableProps}
+                                                    className="flex flex-col w-[200px] p-2 mr-4 border rounded-xl bg-white h-[350px]"
+                                                >
+                                                    <div className="text-center font-bold">
+                                                        {date.toLocaleDateString(
+                                                            "zh-TW",
+                                                            {
+                                                                year: "numeric",
+                                                                month: "2-digit",
+                                                                day: "2-digit",
+                                                            }
+                                                        )}
+                                                    </div>
+
+                                                    {/* 如果日程是空的，顯示提示文字 */}
+                                                    {tasksForDate.length ===
+                                                    0 ? (
+                                                        <div className="flex-grow flex items-center justify-center text-gray-400">
+                                                            請拖曳列表中景點至此
+                                                        </div>
+                                                    ) : (
+                                                        tasksForDate.map(
+                                                            (task, index) => (
+                                                                <Draggable
+                                                                    key={
+                                                                        task.id
+                                                                    }
+                                                                    draggableId={
+                                                                        task.id
+                                                                    }
+                                                                    index={
+                                                                        index
+                                                                    }
+                                                                >
+                                                                    {(
+                                                                        provided
+                                                                    ) => (
+                                                                        <div
+                                                                            ref={
+                                                                                provided.innerRef
+                                                                            }
+                                                                            {...provided.draggableProps}
+                                                                            {...provided.dragHandleProps}
+                                                                            className="p-2 m-2 border rounded bg-gray-200"
+                                                                        >
+                                                                            {/* 使用 task 的 title 或其他属性渲染 */}
+                                                                            <div
+                                                                                className="text-sm font-bold truncate"
+                                                                                title={
+                                                                                    task.title
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    task.title
+                                                                                }
+                                                                            </div>
+                                                                            <div
+                                                                                className="text-xs text-gray-600 truncate"
+                                                                                title={
+                                                                                    task.address
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    task.address
+                                                                                }
+                                                                            </div>
+                                                                            <div className="text-xs text-gray-400">
+                                                                                Rating:{" "}
+                                                                                {
+                                                                                    task.rating
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </Draggable>
+                                                            )
+                                                        )
+                                                    )}
+                                                    {provided.placeholder}
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    );
                                 })}
                             </div>
-                            
                         </div>
-                    ))}
-                </div>
+                    </div>
+                </DragDropContext>
             </div>
-
-            <style jsx>{`
-                .custom-scroll {
-                    scrollbar-width: auto; /* For Firefox */
-                    -ms-overflow-style: auto; /* For IE */
-                }
-
-                .custom-scroll::-webkit-scrollbar {
-                    width: 8px; /* Set width of the scrollbar */
-                    height: 8px; /* Set height of the scrollbar */
-                    background-color: #f1f1f1; /* Background color of the scrollbar */
-                }
-
-                .custom-scroll::-webkit-scrollbar-thumb {
-                    background-color: #888; /* Color of the scrollbar thumb */
-                    border-radius: 10px; /* Optional: round the corners of the scrollbar */
-                }
-
-                .custom-scroll:hover::-webkit-scrollbar-thumb {
-                    background-color: #555; /* Darken the color when hovered */
-                }
-            `}</style>
-
         </div>
     );
 };

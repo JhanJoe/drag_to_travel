@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { FaEdit } from "react-icons/fa";
-import { Place, PlaceList } from '../types/map';
+import { Place, PlaceList } from '../types/tripAndPlace';
 
 
 interface PlaceListCardProps {
     placeList: PlaceList & { places?: Place[] };
-    onDelete?: (id: string) => void; //可選參數：在planning頁面不使用
-    onUpdate?: (id: string, updatedTitle: string, updatedNotes: string) => void; //可選參數：在planning頁面不使用
-    onDeletePlace?: (placeId: string, placeListId: string) => void; //可選參數：在planning頁面不使用
+    onDelete?: (id: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
+    onUpdate?: (id: string, updatedTitle: string, updatedNotes: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
+    onDeletePlace?: (placeId: string, placeListId: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
     children?: React.ReactNode;    
 }
 
@@ -32,21 +32,6 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
 
     return (
         <div className="relative mb-3 p-3 border rounded-xl bg-white overflow-hidden max-h-[250px] flex flex-col">
-            <style jsx>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #c0c0c0;
-                    border-radius: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #5C7457;
-                }
-            `}</style>
             {isEditing ? (
                 <>
                     <input
@@ -89,7 +74,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
 
                     <div className="text-lg font-bold text-center">{placeList.title}</div>
                     <div className="text-center text-gray-400 text-sm">{placeList.notes}</div>
-                    <div className="mt-2 overflow-y-auto flex-grow custom-scrollbar">
+                    <div className="mt-2 overflow-y-auto flex-grow custom-scrollbar-y">
                     {placeList.places?.map((place) => {
                     console.log("Place in map function:", place); //TODO
                     return (
@@ -105,7 +90,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                                             console.error("Place id is undefined:", place);
                                         }
                                     }}
-                                    className="text-red-500"
+                                    className="text-custom-atomic-tangerine"
                                     title="刪除此景點"
                                 >
                                     ×

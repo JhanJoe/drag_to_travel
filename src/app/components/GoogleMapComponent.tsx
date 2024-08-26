@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { GoogleMap, useJsApiLoader, Autocomplete, Marker, InfoWindow } from '@react-google-maps/api';
-import { Place, PlaceList } from '../types/map';
+import { Place, PlaceList } from '../types/tripAndPlace';
 import { FaStar } from "react-icons/fa";
 
 interface GoogleMapComponentProps {

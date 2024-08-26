@@ -8,15 +8,7 @@ import TripCard from "../components/TripCard";
 import TripModal from "../components/TripModal";
 import { useLoading } from "../contexts/LoadingContext";
 import { useAuth } from "../contexts/AuthContext";
-
-interface Trip {
-    id: string;
-    name: string;
-    startDate: string;
-    endDate: string;
-    notes: string;
-    userId: string;
-}
+import { Trip } from '../types/tripAndPlace'; 
 
 const TripsPage: React.FC = () => {
     const [trips, setTrips] = useState<Trip[]>([]);
@@ -24,7 +16,7 @@ const TripsPage: React.FC = () => {
     const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
     const router = useRouter();
     const { user, loading } = useAuth();
-    const { startLoading, stopLoading } = useLoading(); // 使用LoadingContext
+    const { startLoading, stopLoading } = useLoading();
     const hasFetchedRef = useRef(false); //使用 useRef 來追蹤是否已經執行過 fetch
 
     const fetchTrips = useCallback(async (userId: string) => {
@@ -125,7 +117,7 @@ const TripsPage: React.FC = () => {
     return (
         <div className="p-4">
             <div
-                className="border-2 shadow-md p-4 mb-4 cursor-pointer text-center rounded-md hover:text-custom-atomic-tangerine "
+                className="border-2 shadow-md p-4 mb-4 cursor-pointer text-center rounded-md text-gray-400 hover:text-custom-atomic-tangerine "
                 onClick={() => {
                 setCurrentTrip(null);
                 setShowModal(true);

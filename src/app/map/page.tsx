@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback} from "react";
+import React, { useState, useEffect, useCallback, useRef} from "react";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../../../firebase-config";
 import { useRouter } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
-import { Place, PlaceList } from '../types/map';
+import { Trip, Place, PlaceList} from '../types/tripAndPlace';
 import GoogleMapComponent from "../components/GoogleMapComponent";
 import { useAuth } from "../contexts/AuthContext";
 import { useTripContext } from "../contexts/TripContext";
@@ -13,7 +13,7 @@ import { useLoading } from "../contexts/LoadingContext";
 
 const MapPage: React.FC = () => {  
     const { user } = useAuth();
-    const { trip, placeLists, fetchTripAndPlaceLists, updatePlaceLists } = useTripContext();
+    const { trip, placeLists, setPlaceLists, fetchTripAndPlaceLists, tripDataLoading, setTrip, updatePlaceLists, addPlaceToList, removePlaceFromList } = useTripContext();
     const { startLoading, stopLoading } = useLoading();  //loading動畫
     const [newPlaceListTitle, setNewPlaceListTitle] = useState("");
     const [newPlaceListNotes, setNewPlaceListNotes] = useState("");
@@ -23,6 +23,7 @@ const MapPage: React.FC = () => {
     const router = useRouter();
     const [tripId, setTripId] = useState<string | null>(null);
     const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
+    const tripDataLoadingRef = useRef(false); // 使用 useRef 來跟踪 tripDataLoading 狀態
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -32,33 +33,54 @@ const MapPage: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        if (user && tripId) {
-            startLoading("正在載入資料...");
-            fetchTripAndPlaceLists(user.uid, tripId).finally(() => stopLoading());
+    useEffect(() => {   
+        if (user && tripId && !tripDataLoadingRef.current) {
+                tripDataLoadingRef.current = true;  // flag。用來追蹤是否已經在進行資料載入，true表示資料加載中，就不會再發起新的fetch
+                console.log("map/page 開始載入loading動畫") //TODO 待刪
+                startLoading("正在載入資料..."); //loading動畫開始
+                setTrip(null);
+                setPlaceLists([]);
+                fetchTripAndPlaceLists(user.uid, tripId)
+                .finally(() => {
+                    console.log("map/page 結束loading動畫") //TODO 待刪
+                    stopLoading();  // 停止loading動畫
+                    setTimeout(() => {
+                        tripDataLoadingRef.current = false; // 要改為false，這樣有下次useEffect時才會重新fetch資料。(如果前後都不加ref，loading動畫不會顯示)
+                    }, 500);  // 加一個延遲，確保UI狀態更新（不加延遲loading動畫不會停, 還會重複fetch）
+                });
         }
-    }, [user, tripId, fetchTripAndPlaceLists, startLoading, stopLoading]);
+    }, [user, tripId, fetchTripAndPlaceLists, startLoading, stopLoading, setTrip, setPlaceLists]);
 
     const handleAddPlaceList = async () => {
         if (newPlaceListTitle.trim() !== "" && tripId && user) {
-        const newPlaceList = {
-            title: newPlaceListTitle,
-            notes: newPlaceListNotes,
-            userId: user.uid,
-            tripId: tripId,
-            
-        };
-        const docRef = await addDoc(collection(db, "placeLists"), newPlaceList);
-        fetchTripAndPlaceLists(user.uid, tripId);
-        setNewPlaceListTitle("");
-        setNewPlaceListNotes("");
+            const newPlaceList = {
+                title: newPlaceListTitle,
+                notes: newPlaceListNotes,
+                userId: user.uid,
+                tripId: tripId,
+            };
+            try {
+                const docRef = await addDoc(collection(db, "placeLists"), newPlaceList);
+                updatePlaceLists(prevPlaceLists => [
+                    ...prevPlaceLists,
+                    { id: docRef.id, ...newPlaceList, places: [] } 
+                ]);
+                setNewPlaceListTitle("");
+                setNewPlaceListNotes("");
+            } catch (error) {
+                console.error("Error adding place list:", error);
+            }
         }
     };
 
     const handleDeletePlaceList = async (id: string) => {
         if (user && tripId) {
-            await deleteDoc(doc(db, "placeLists", id));
-            fetchTripAndPlaceLists(user.uid, tripId);
+            try {
+                await deleteDoc(doc(db, "placeLists", id));
+                removePlaceFromList(tripId, id);
+            } catch (error) {
+                console.error("Error deleting place list:", error);
+            }
         }
     };
 
@@ -92,25 +114,12 @@ const MapPage: React.FC = () => {
                 plannedDate: '', // 初始值為空字串
                 plannedDateOrder: null, 
             };
-
-            // try {
-            //     await addDoc(collection(db, "places"), newPlace);
-            //     fetchTripAndPlaceLists(user.uid, tripId);
-            // } catch (error) {
-            //     console.error("Error adding place:", error);
-            // }
+            
             try {
                 const docRef = await addDoc(collection(db, "places"), newPlace);
-                const newPlaceWithId = { ...newPlace, id: docRef.id };
-    
-                // 直接更新狀態  TODO 還是應該重fetch資料庫資料？
-                updatePlaceLists(prevPlaceLists =>
-                    prevPlaceLists.map((placeList) =>
-                        placeList.id === placeListId
-                            ? { ...placeList, places: [...(placeList.places || []), newPlaceWithId] }
-                            : placeList
-                    )
-                );
+                const newPlaceWithId = { id: docRef.id, ...newPlace };
+                
+                addPlaceToList(placeListId, newPlaceWithId);
             } catch (error) {
                 console.error("Error adding place:", error);
             }
@@ -122,23 +131,14 @@ const MapPage: React.FC = () => {
             console.error("Invalid place ID");
             return;
         }
+
         try {
-            await deleteDoc(doc(db, "places", placeId));
-            // fetchTripAndPlaceLists(user.uid, tripId);
-
-            // 直接更新狀態 TODO 還是應該重fetch資料庫資料？
-            updatePlaceLists(prevPlaceLists =>
-                prevPlaceLists.map((placeList) =>
-                    placeList.id === placeListId
-                        ? { ...placeList, places: placeList.places?.filter((place) => place.id !== placeId) }
-                        : placeList
-                )
-            );
-
+            await deleteDoc(doc(db, "places", placeId)); 
+            removePlaceFromList(placeListId, placeId);
         } catch (error) {
             console.error("Error deleting place:", error);
         }
-    }, [user, tripId, updatePlaceLists]);
+    }, [user, tripId, removePlaceFromList]);
 
     if (!tripId || !user) {
         return <div>Loading...</div>;
@@ -147,7 +147,7 @@ const MapPage: React.FC = () => {
     return (
             <div className="flex h-screen">
 
-                <div className="w-1/3 p-4 overflow-y-auto bg-gray-100">
+                <div className="w-1/3 p-4 overflow-y-auto custom-scrollbar-y bg-gray-100">
                     <div className="flex mb-4">
                         <div
                             onMouseEnter={() => setHovered(false)}

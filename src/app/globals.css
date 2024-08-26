@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* Y方向的捲軸樣式 */
+.custom-scrollbar-y::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar-y::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.custom-scrollbar-y::-webkit-scrollbar-thumb {
+    background: #cfcfcf;
+    border-radius: 4px;
+}
+
+.custom-scrollbar-y::-webkit-scrollbar-thumb:hover {
+    background: #FF9B71;
+}
+
+
+/* X方向的捲軸樣式 */
+.custom-scrollbar-x::-webkit-scrollbar {
+    height: 8px;
+}
+
+.custom-scrollbar-x::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.custom-scrollbar-x::-webkit-scrollbar-thumb {
+    background-color: #a5dee4;
+    border-radius: 10px;
+}
+
+.custom-scrollbar-x:hover::-webkit-scrollbar-thumb {
+    background-color: #FF9B71;
+}

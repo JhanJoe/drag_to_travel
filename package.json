@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^16.6.0",
     "@react-google-maps/api": "^2.19.3",
     "firebase": "^10.12.5",
     "next": "14.2.5",

@@ -1,3 +1,19 @@
+export interface Trip { 
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    notes: string;
+    userId: string;
+}
+
+export interface PlaceList {
+    id: string;
+    title: string;
+    notes: string;
+    places?: Place[]; 
+}
+
 export interface Place {
     id: string;
     title: string; //地點資訊
@@ -17,9 +33,8 @@ export interface Place {
     plannedDateOrder?: number | null;  // 行程日期內的順序
 }
 
-export interface PlaceList {
-    id: string;
-    title: string;
-    notes: string;
-    places?: Place[]; 
+//行程時間
+export interface ItineraryWithTime { 
+    place: Place;
+    time: string; 
 }
