@@ -13,7 +13,9 @@ interface GoogleMapComponentProps {
     infoWindowOpen: boolean;
     setInfoWindowOpen: (isOpen: boolean) => void;
     placeLists: PlaceList[];
-    handleAddToPlaceList: (placeListId: string) => void;
+    handleAddToPlaceList?: (placeListId: string) => void; //planning頁面不需要
+    enableSearch?: boolean; // 新增：控制是否啟用搜尋功能
+    enableMapClick?: boolean; // 新增：控制是否啟用地圖點擊功能
 }
 
 const libraries: any = ['places'];
@@ -22,7 +24,9 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     markerPosition, setMarkerPosition,
     selectedPlace, setSelectedPlace,
     infoWindowOpen, setInfoWindowOpen,
-    placeLists, handleAddToPlaceList
+    placeLists, handleAddToPlaceList,
+    enableSearch = true, // 預設啟用
+    enableMapClick = true // 預設啟用
 }) => {
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
     const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
@@ -163,18 +167,20 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
 
     return isLoaded ? (
         <>
-            <Autocomplete
-                onLoad={onLoadAutocomplete}
-                onPlaceChanged={onPlaceChanged}
-            >
-                <input
-                    type="text"
-                    placeholder="輸入景點名稱後，點擊浮現對話框的景點開始搜尋。或也可以直接點擊地圖上景點"
-                    className="absolute top-4 left-4 z-10 p-2 border rounded w-3/4"
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                />
-            </Autocomplete>
+            {enableSearch && (
+                <Autocomplete
+                    onLoad={onLoadAutocomplete}
+                    onPlaceChanged={onPlaceChanged}
+                >
+                    <input
+                        type="text"
+                        placeholder="輸入景點名稱後，點擊浮現對話框的景點開始搜尋。或也可以直接點擊地圖上景點"
+                        className="absolute top-4 left-4 z-10 p-2 border rounded w-3/4"
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                    />
+                </Autocomplete>
+            )}
             <GoogleMap
                 onLoad={onLoad}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
@@ -196,7 +202,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                         <FaStar className="text-yellow-500 mr-1" />
                                         <p>{selectedPlace.rating ? `評分: ${selectedPlace.rating}/5 (${selectedPlace.user_ratings_total} 評論)` : ''}</p>
                                     </div>
-                                    {selectedPlace.opening_hours?.weekday_text && selectedPlace.opening_hours.weekday_text.length > 0 ? (
+                                    {selectedPlace.opening_hours?.weekday_text && Array.isArray(selectedPlace.opening_hours.weekday_text) && selectedPlace.opening_hours.weekday_text.length > 0 ? (
                                         <>
                                             <p>開放時間：</p>
                                             {selectedPlace.opening_hours?.weekday_text.map((day: string, index: number) => (
@@ -212,6 +218,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                         </a>
                                     )}
                                     <br />
+                                    {handleAddToPlaceList && (
                                     <select
                                         onChange={(e) => handleAddToPlaceList(e.target.value)}
                                         className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
@@ -223,6 +230,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                             </option>
                                         ))}
                                     </select>
+                                    )}
                                 </div>
                             </InfoWindow>
                         )}

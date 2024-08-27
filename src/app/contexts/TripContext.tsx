@@ -63,7 +63,7 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("使用 fetchTripAndPlaceLists 函式", { userId, tripId }); //TODO 待刪
 
         if (tripDataLoadingRef.current) {
-            console.log("TripContext- Already loading, skipping fetch");
+            console.log("已經在加載中，跳過此次Fetch");
             return;
         }
 
@@ -91,27 +91,46 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 修改 placesMap 的初始化
         const placesMap: PlacesMap = new Map();
         placesSnapshot.docs.forEach(doc => {
-            const place = { id: doc.id, ...doc.data() } as Place;
-            if (!placesMap.has(place.placeListId)) {
-                placesMap.set(place.placeListId, []);
-            }
-            placesMap.get(place.placeListId)?.push(place);
-        });
+            const placeData = doc.data();
+                const place: Place = {
+                    id: doc.id,
+                    title: placeData.title,
+                    address: placeData.address,
+                    note: placeData.note,
+                    placeListId: placeData.placeListId,
+                    GoogleMapPlaceId: placeData.GoogleMapPlaceId,
+                    rating: placeData.rating,
+                    userRatingsTotal: placeData.userRatingsTotal,
+                    openingHours: placeData.openingHours,
+                    website: placeData.website,
+                    plannedDate: placeData.plannedDate,
+                    plannedDateOrder: placeData.plannedDateOrder,
+                    latitude: placeData.latitude,
+                    longitude: placeData.longitude,
+                    userId: placeData.userId,
+                    tripId: placeData.tripId
+                };
+                
+                if (!placesMap.has(place.placeListId)) {
+                    placesMap.set(place.placeListId, []);
+                }
+                placesMap.get(place.placeListId)?.push(place);
+            });
 
-        const placeListsList = placeListsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            places: placesMap.get(doc.id) || []
-        } as PlaceList));
+            const placeListsList = placeListsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                places: placesMap.get(doc.id) || []
+            } as PlaceList));
 
-        setPlaceLists(placeListsList);
-    } catch (error) {
-        console.error("Error fetching trip and place lists:", error);
-    } finally {
-        tripDataLoadingRef.current = false;
-        setTripDataLoading(false);
-    }
-    }, []); 
+            setPlaceLists(placeListsList);
+        } catch (error) {
+            console.error("獲取行程和景點列表時出錯:", error);
+        } finally {
+            tripDataLoadingRef.current = false;
+            setTripDataLoading(false);
+        }
+    }, []);
 
     const contextValue = useMemo(() => ({
         trip,
@@ -131,3 +150,4 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
         </TripContext.Provider>
     );
 };
+
