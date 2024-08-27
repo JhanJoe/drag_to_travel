@@ -16,6 +16,7 @@ interface GoogleMapComponentProps {
     handleAddToPlaceList?: (placeListId: string) => void; //planning頁面不需要
     enableSearch?: boolean; // 新增：控制是否啟用搜尋功能
     enableMapClick?: boolean; // 新增：控制是否啟用地圖點擊功能
+    onMapLoad?: (map: google.maps.Map) => void;
 }
 
 const libraries: any = ['places'];
@@ -26,7 +27,8 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     infoWindowOpen, setInfoWindowOpen,
     placeLists, handleAddToPlaceList,
     enableSearch = true, // 預設啟用
-    enableMapClick = true // 預設啟用
+    enableMapClick = true, // 預設啟用
+    onMapLoad,
 }) => {
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
     const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
@@ -44,6 +46,9 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
         mapRef.current = mapInstance; 
         setPlacesService(new google.maps.places.PlacesService(mapInstance));
         mapInstance.panTo({ lat: 25.0330, lng: 121.5654 });
+        if (onMapLoad) {
+            onMapLoad(mapInstance); 
+        }
     };
 
     const onLoadAutocomplete = (autocompleteInstance: google.maps.places.Autocomplete) => {

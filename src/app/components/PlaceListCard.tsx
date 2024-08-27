@@ -8,10 +8,11 @@ interface PlaceListCardProps {
     onDelete?: (id: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
     onUpdate?: (id: string, updatedTitle: string, updatedNotes: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
     onDeletePlace?: (placeId: string, placeListId: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
+    onPlaceClick?: (place: Place) => void;
     children?: React.ReactNode;    
 }
 
-const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, onDeletePlace, children }) => {
+const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, onDeletePlace, onPlaceClick, children }) => {
     console.log("PlaceList in PlaceListCard:", placeList); //TODO 待刪
     const [isEditing, setIsEditing] = useState(false);
     const [updatedTitle, setUpdatedTitle] = useState(placeList.title);
@@ -79,7 +80,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     console.log("Place in map function:", place); //TODO
                     return (
                         <div key={place.id} className="flex items-center justify-between text-center text-gray-600">
-                            <div className="truncate" title={place.title}>{place.title}</div>
+                            <div className="truncate cursor-pointer" title={place.title} onClick={() => onPlaceClick && onPlaceClick(place)}>{place.title}</div>
                             {onDeletePlace && (
                                 <button
                                     onClick={() => {

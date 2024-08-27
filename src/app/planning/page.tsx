@@ -26,6 +26,8 @@ const PlanPage: React.FC = () => {
     const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
     const [infoWindowOpen, setInfoWindowOpen] = useState<boolean>(false);
 
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+
     const tripDataLoadingRef = useRef(false);
 
     useEffect(() => {
@@ -135,6 +137,11 @@ const PlanPage: React.FC = () => {
             user_ratings_total: place.userRatingsTotal || 0
         } as any);
         setInfoWindowOpen(true);
+
+        if (mapInstance) {
+            mapInstance.panTo(position);
+            // mapInstance.setZoom(15); 
+        }
     };
 
     if (loading) {
@@ -191,6 +198,7 @@ const PlanPage: React.FC = () => {
                         placeLists={placeLists}
                         enableSearch={false} // 在 planning/page 中禁用搜尋功能
                         enableMapClick={false} // 在 planning/page 中禁用地圖點擊功能
+                        onMapLoad={(map: google.maps.Map) => setMapInstance(map)}
                     />
                 </div>             
             </div>

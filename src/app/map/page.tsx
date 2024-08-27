@@ -24,6 +24,7 @@ const MapPage: React.FC = () => {
     const [tripId, setTripId] = useState<string | null>(null);
     const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
     const tripDataLoadingRef = useRef(false); // 使用 useRef 來跟踪 tripDataLoading 狀態
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -140,6 +141,32 @@ const MapPage: React.FC = () => {
         }
     }, [user, tripId, removePlaceFromList]);
 
+    const handlePlaceClick = (place: Place) => {
+        const position = { lat: place.latitude, lng: place.longitude };
+        setMarkerPosition(position);
+        setSelectedPlace({
+            ...place,
+            name: place.title,
+            geometry: {
+                location: {
+                    lat: () => place.latitude,
+                    lng: () => place.longitude
+                }
+            },
+            formatted_address: place.address,
+            opening_hours: place.openingHours ? {
+                weekday_text: Array.isArray(place.openingHours) ? place.openingHours : []
+            } : undefined,
+            user_ratings_total: place.userRatingsTotal || 0
+        } as any);
+        setInfoWindowOpen(true);
+
+        if (mapInstance) {
+            mapInstance.panTo(position);
+            mapInstance.setZoom(15); 
+        }
+    };
+
     if (!tripId || !user) {
         return <div>Loading...</div>;
     }
@@ -183,6 +210,7 @@ const MapPage: React.FC = () => {
                                 onDelete={handleDeletePlaceList}
                                 onUpdate={handleUpdatePlaceList}
                                 onDeletePlace={handleDeletePlace}
+                                onPlaceClick={handlePlaceClick}
                             >
                                 <div className="flex justify-center">
                                     <button
@@ -232,6 +260,7 @@ const MapPage: React.FC = () => {
                             setInfoWindowOpen={setInfoWindowOpen}
                             placeLists={placeLists}
                             handleAddToPlaceList={handleAddToPlaceList}
+                            onMapLoad={(map: google.maps.Map) => setMapInstance(map)}
                     />
                     
                 </div>
