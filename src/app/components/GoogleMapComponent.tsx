@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { GoogleMap, useJsApiLoader, Autocomplete, Marker, InfoWindow } from '@react-google-maps/api';
 import { Place, PlaceList } from '../types/tripAndPlace';
 import { FaStar } from "react-icons/fa";
+import Image from 'next/image';
 
 interface GoogleMapComponentProps {
     markerPosition: google.maps.LatLngLiteral | null;
@@ -14,9 +15,11 @@ interface GoogleMapComponentProps {
     setInfoWindowOpen: (isOpen: boolean) => void;
     placeLists: PlaceList[];
     handleAddToPlaceList?: (placeListId: string) => void; //planning頁面不需要
-    enableSearch?: boolean; // 新增：控制是否啟用搜尋功能
-    enableMapClick?: boolean; // 新增：控制是否啟用地圖點擊功能
+    enableSearch?: boolean; // 搜尋功能（planning不使用）
+    // enableMapClick?: boolean; // 地圖點擊功能
     onMapLoad?: (map: google.maps.Map) => void;
+    placePhotoUrl: string | null;
+    setPlacePhotoUrl: (url: string | null) => void;
 }
 
 const libraries: any = ['places'];
@@ -26,9 +29,11 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     selectedPlace, setSelectedPlace,
     infoWindowOpen, setInfoWindowOpen,
     placeLists, handleAddToPlaceList,
-    enableSearch = true, // 預設啟用
-    enableMapClick = true, // 預設啟用
+    enableSearch = true, 
+    // enableMapClick = true, 
     onMapLoad,
+    placePhotoUrl,
+    setPlacePhotoUrl,
 }) => {
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
     const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
@@ -63,6 +68,8 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     };
 
     const handlePlaceSelection = (place: google.maps.places.PlaceResult) => {
+        setPlacePhotoUrl(null);
+
         if (place.geometry && place.geometry.location) {
             const location = place.geometry.location;
             const position = {
@@ -83,6 +90,13 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 if (currentZoom !== undefined && currentZoom < 15) {
                     mapRef.current.setZoom(15);
                 }
+            }
+
+            if (place.photos && place.photos.length > 0) {
+                const photoUrl = place.photos[0].getUrl({ maxWidth: 300, maxHeight: 200 });
+                setPlacePhotoUrl(photoUrl);
+            } else {
+                setPlacePhotoUrl(null); 
             }
         } else {
             console.log('無法獲取地點詳細資訊');
@@ -114,7 +128,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                     if (isSpecificPlace(results[0])) {
                         // 如果 geocode 結果看起來是一個具體地點，則直接使用
                         placesService.getDetails(
-                            { placeId: results[0].place_id, fields: ['name', 'geometry', 'formatted_address', 'place_id', 'rating', 'user_ratings_total', 'opening_hours', 'website'] },
+                            { placeId: results[0].place_id, fields: ['name', 'geometry', 'formatted_address', 'place_id', 'rating', 'user_ratings_total', 'opening_hours', 'website', 'photos'] },
                             (place, detailStatus) => {
                                 if (detailStatus === google.maps.places.PlacesServiceStatus.OK && place) {
                                     handlePlaceSelection(place);
@@ -138,7 +152,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                         placesService.getDetails(
                                             { 
                                                 placeId: placeId, 
-                                                fields: ['name', 'geometry', 'formatted_address', 'place_id', 'rating', 'user_ratings_total', 'opening_hours', 'website'] 
+                                                fields: ['name', 'geometry', 'formatted_address', 'place_id', 'rating', 'user_ratings_total', 'opening_hours', 'website', 'photos'] 
                                             },
                                             (place, detailStatus) => {
                                                 if (detailStatus === google.maps.places.PlacesServiceStatus.OK && place) {
@@ -201,41 +215,52 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                 position={markerPosition}
                                 onCloseClick={() => setInfoWindowOpen(false)}
                             >
-                                <div className="p-2 rounded z-30">
-                                    <h2 className="text-lg font-bold">{selectedPlace.name}</h2>
-                                    <div className="flex items-center">
-                                        <FaStar className="text-yellow-500 mr-1" />
-                                        <p>{selectedPlace.rating ? `評分: ${selectedPlace.rating}/5 (${selectedPlace.user_ratings_total} 評論)` : ''}</p>
-                                    </div>
-                                    {selectedPlace.opening_hours?.weekday_text && Array.isArray(selectedPlace.opening_hours.weekday_text) && selectedPlace.opening_hours.weekday_text.length > 0 ? (
-                                        <>
-                                            <p>開放時間：</p>
-                                            {selectedPlace.opening_hours?.weekday_text.map((day: string, index: number) => (
-                                                <p key={index}>{day}</p>
+                                <div className="z-30 m-0 p-0">
+                                    {placePhotoUrl && (
+                                        <Image
+                                            src={placePhotoUrl}
+                                            alt={selectedPlace.name}
+                                            width={125} 
+                                            height={70} 
+                                            className="w-full h-auto mb-2 rounded m-0 p-0"
+                                        />
+                                    )}
+                                    <div className="p-2">
+                                        <h2 className="text-lg font-bold">{selectedPlace.name}</h2>
+                                        <div className="flex items-center">
+                                            <FaStar className="text-yellow-500 mr-1" />
+                                            <p>{selectedPlace.rating ? `評分: ${selectedPlace.rating}/5 (${selectedPlace.user_ratings_total} 評論)` : ''}</p>
+                                        </div>
+                                        {selectedPlace.opening_hours?.weekday_text && Array.isArray(selectedPlace.opening_hours.weekday_text) && selectedPlace.opening_hours.weekday_text.length > 0 ? (
+                                            <>
+                                                <p>開放時間：</p>
+                                                {selectedPlace.opening_hours?.weekday_text.map((day: string, index: number) => (
+                                                    <p key={index}>{day}</p>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            <p>開放時間：-- </p>
+                                        )}
+                                        {selectedPlace.website && (
+                                            <a href={selectedPlace.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                                                官方網站
+                                            </a>
+                                        )}
+                                        <br />
+                                        {handleAddToPlaceList && (
+                                        <select
+                                            onChange={(e) => handleAddToPlaceList(e.target.value)}
+                                            className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
+                                        >
+                                            <option value="">選擇列表</option>
+                                            {placeLists.map((placeList) => (
+                                                <option key={placeList.id} value={placeList.id}>
+                                                    {placeList.title}
+                                                </option>
                                             ))}
-                                        </>
-                                    ) : (
-                                        <p>開放時間：-- </p>
-                                    )}
-                                    {selectedPlace.website && (
-                                        <a href={selectedPlace.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                            官方網站
-                                        </a>
-                                    )}
-                                    <br />
-                                    {handleAddToPlaceList && (
-                                    <select
-                                        onChange={(e) => handleAddToPlaceList(e.target.value)}
-                                        className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
-                                    >
-                                        <option value="">選擇列表</option>
-                                        {placeLists.map((placeList) => (
-                                            <option key={placeList.id} value={placeList.id}>
-                                                {placeList.title}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    )}
+                                        </select>
+                                        )}
+                                    </div>
                                 </div>
                             </InfoWindow>
                         )}

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../../firebase-config';
-import { Trip, Place, PlaceList, ItineraryWithTime } from '../types/tripAndPlace'; 
+import { Trip, Place, PlaceList, Itinerary } from '../types/tripAndPlace'; 
 
 interface TripContextType {
     trip: Trip | null;
@@ -104,11 +104,13 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     openingHours: placeData.openingHours,
                     website: placeData.website,
                     plannedDate: placeData.plannedDate,
-                    plannedDateOrder: placeData.plannedDateOrder,
+                    arrivedTime: placeData.arrivedTime,
+                    leftTime: placeData.leftTime,
                     latitude: placeData.latitude,
                     longitude: placeData.longitude,
                     userId: placeData.userId,
-                    tripId: placeData.tripId
+                    tripId: placeData.tripId,
+                    photoUrl: placeData.photoUrl,
                 };
                 
                 if (!placesMap.has(place.placeListId)) {

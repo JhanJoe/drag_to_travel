@@ -30,21 +30,36 @@ export interface Place {
     openingHours?: string[];
     website?: string;
     plannedDate?: string;  // 行程日期
-    plannedDateOrder?: number | null;  // 行程日期內的順序
+    arrivedTime?: string;  // 行程時間
+    leftTime?: string;  // 離開時間
+    photoUrl?: string;
 }
 
-//行程時間
-export interface ItineraryWithTime { 
-    place: Place;
-    // time: string; 
-    arrivedTime: string; // 到達時間
-    leavingTime?: string; // 離開時間（可選）
+export interface ItineraryPlace {
+    id: string;  // 在 itineraries 中的唯一 id
+    originalPlaceId: string;  // 該景點在 places 資料庫裡的 firestore id
+    title: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    note?: string;
+    placeListId: string;
+    GoogleMapPlaceId?: string;
+    rating?: number;
+    userRatingsTotal?: number;
+    openingHours?: string[];
+    website?: string;
+    photoUrl?: string;
+    arrivedTime: string | null;
+    leftTime: string | null;
+    transportDuration?: number;
+    transportMode?: 'DRIVING' | 'WALKING' | 'TRANSIT';
 }
 
-//交通方式與時間
-export interface TransportationTime {
-    origin: Place; // 起點
-    destination: Place; // 終點
-    travelMode: 'DRIVING' | 'WALKING' | 'TRANSIT'; // 交通方式
-    duration: string; // 交通所需時間
+export interface Itinerary {
+    id: string;
+    date: string;
+    userId: string;
+    tripId: string;
+    places: ItineraryPlace[];
 }

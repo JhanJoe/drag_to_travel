@@ -25,6 +25,7 @@ const MapPage: React.FC = () => {
     const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
     const tripDataLoadingRef = useRef(false); // 使用 useRef 來跟踪 tripDataLoading 狀態
     const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+    const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -78,7 +79,10 @@ const MapPage: React.FC = () => {
         if (user && tripId) {
             try {
                 await deleteDoc(doc(db, "placeLists", id));
-                removePlaceFromList(tripId, id);
+                // removePlaceFromList(tripId, id);
+                updatePlaceLists(prevPlaceLists => 
+                    prevPlaceLists.filter(placeList => placeList.id !== id)
+                );
             } catch (error) {
                 console.error("Error deleting place list:", error);
             }
@@ -112,8 +116,10 @@ const MapPage: React.FC = () => {
                 userRatingsTotal: selectedPlace.user_ratings_total || '--',
                 openingHours: selectedPlace.opening_hours?.weekday_text || '--',
                 website: selectedPlace.website || '--',
-                plannedDate: '', // 初始值為空字串
-                plannedDateOrder: null, 
+                plannedDate: '', 
+                arrivedTime: '', 
+                leftTime: '',
+                photoUrl: selectedPlace.photos?.[0]?.getUrl() || '',
             };
             
             try {
@@ -157,9 +163,10 @@ const MapPage: React.FC = () => {
             opening_hours: place.openingHours ? {
                 weekday_text: Array.isArray(place.openingHours) ? place.openingHours : []
             } : undefined,
-            user_ratings_total: place.userRatingsTotal || 0
+            user_ratings_total: place.userRatingsTotal || 0,
         } as any);
         setInfoWindowOpen(true);
+        setPlacePhotoUrl(place.photoUrl || null);
 
         if (mapInstance) {
             mapInstance.panTo(position);
@@ -174,8 +181,8 @@ const MapPage: React.FC = () => {
     return (
             <div className="flex h-screen">
 
-                <div className="w-1/3 p-4 overflow-y-auto custom-scrollbar-y bg-gray-100">
-                    <div className="flex mb-4">
+                <div className="w-1/3 p-3 overflow-y-auto custom-scrollbar-y bg-gray-100">
+                    <div className="flex mt-2 mb-3">
                         <div
                             onMouseEnter={() => setHovered(false)}
                             onClick={() => router.push(`/map?tripId=${tripId}`)}
@@ -195,7 +202,7 @@ const MapPage: React.FC = () => {
                     </div>
 
                     {trip && (
-                        <div className="mb-2 p-2 border-2 shadow-md bg-white rounded-xl text-center">
+                        <div className="mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center">
                             <div className="text-2xl font-bold">{trip.name}</div>
                             <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
                             <div className="text-gray-500">{trip.notes}</div>
@@ -261,6 +268,8 @@ const MapPage: React.FC = () => {
                             placeLists={placeLists}
                             handleAddToPlaceList={handleAddToPlaceList}
                             onMapLoad={(map: google.maps.Map) => setMapInstance(map)}
+                            placePhotoUrl={placePhotoUrl}
+                            setPlacePhotoUrl={setPlacePhotoUrl}
                     />
                     
                 </div>

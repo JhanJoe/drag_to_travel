@@ -1,34 +1,48 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useTripContext } from "../contexts/TripContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Trip, Place, PlaceList, ItineraryWithTime } from '../types/tripAndPlace';
-import PlaceListCard from "../components/PlaceListCard";
+import { Trip, Place, PlaceList, Itinerary, ItineraryPlace } from '../types/tripAndPlace';
 import { useLoading } from "../contexts/LoadingContext";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import GoogleMapComponent from "../components/GoogleMapComponent";
+import { FaStar } from "react-icons/fa";
+import { db } from "../../../firebase-config";
+import { setDoc, updateDoc, doc, getDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 
+type TransportMode = 'DRIVING' | 'WALKING' | 'TRANSIT';
+
+const TRANSPORT_MODE_NAMES: Record<TransportMode, string> = {
+    DRIVING: '開車',
+    WALKING: '步行',
+    TRANSIT: '大眾運輸'
+};
+
+interface RouteInfo {
+    duration: number;
+    mode: TransportMode;
+}
 
 const PlanPage: React.FC = () => {  
     const { user, loading } = useAuth();
     const { trip, placeLists, fetchTripAndPlaceLists } = useTripContext();
     const { startLoading, stopLoading } = useLoading(); //loading動畫
-    const router = useRouter();
+    const [isSaving, setIsSaving] = useState(false); //儲存資料的loading動畫
     const [tripId, setTripId] = useState<string | null>(null);
     const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
-    
-    const [itineraries, setItineraries] = useState<Record<string, Place[]>>({}); //管理每天日程的狀態
-    // const [itineraryTime, setItineraryTime] = useState<Record<string, ItineraryWithTime[]>>({}); //每個行程時間
-
+    const [itineraries, setItineraries] = useState<Record<string, (Place | ItineraryPlace)[]>>({}); //行程
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null);
     const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
     const [infoWindowOpen, setInfoWindowOpen] = useState<boolean>(false);
-
     const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
-
+    const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null);
+    const [routeInfo, setRouteInfo] = useState<Record<string, Record<string, RouteInfo>>>({}); //路線規劃
+    const [selectedMode, setSelectedMode] = useState<TransportMode>('DRIVING'); //交通模式
+    const [savedItineraries, setSavedItineraries] = useState<Record<string, (Place | ItineraryPlace)[]>>({});
     const tripDataLoadingRef = useRef(false);
+    const router = useRouter();
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -37,22 +51,69 @@ const PlanPage: React.FC = () => {
             setTripId(id);
         }
     }, []);
-
+    
     useEffect(() => {
-        if (tripId && user && !tripDataLoadingRef.current) {
-            tripDataLoadingRef.current = true;
-            console.log("PlanPage: 開始載入loading動畫");
-            startLoading("正在載入資料...");
-            fetchTripAndPlaceLists(user.uid, tripId)
-                .finally(() => {
+        const fetchAllData = async () => {
+            if (tripId && user && !tripDataLoadingRef.current && !isSaving) {
+                tripDataLoadingRef.current = true;
+                console.log("PlanPage: 開始載入loading動畫");
+                startLoading("正在載入資料...");
+
+                try {
+                    await fetchTripAndPlaceLists(user.uid, tripId);
+
+                    const itinerariesRef = collection(db, "itineraries");
+                    const q = query(itinerariesRef, where("userId", "==", user.uid), where("tripId", "==", tripId));
+                    const querySnapshot = await getDocs(q);
+                    
+                    const savedData: Record<string, (Place | ItineraryPlace)[]> = {};
+                    const routeData: Record<string, Record<string, RouteInfo>> = {};
+
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data() as Itinerary;
+                        savedData[data.date] = data.places.map((place: any) => ({
+                            ...place,
+                            id: place.id || `${place.originalPlaceId}-00`, // 確保每個地點都有唯一的 id
+                            latitude: place.latitude,
+                            longitude: place.longitude,
+                            transportDuration: place.transportDuration || undefined,
+                            transportMode: place.transportMode || undefined,
+                        }));
+
+                        data.places.forEach((place: any, index: number) => {
+                            if (index > 0) {
+                                const prevPlaceId = data.places[index - 1].id;
+                                const key = `${prevPlaceId}-${place.id}`;
+                                routeData[data.date] = routeData[data.date] || {};
+                                routeData[data.date][key] = {
+                                    duration: place.transportDuration || -1,
+                                    mode: place.transportMode || 'DRIVING',
+                                };
+                            }
+                        });
+                    });
+                    
+                    setSavedItineraries(savedData);
+                    setRouteInfo(routeData);
+
+                    if (Object.keys(savedData).length > 0) {
+                        setItineraries(savedData);
+                    }
+
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                } finally {
                     console.log("PlanPage: 結束loading動畫");
                     stopLoading();
                     setTimeout(() => {
                         tripDataLoadingRef.current = false;
                     }, 500);
-                });
-        }
-    }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading]);
+                }
+            }
+        };
+
+        fetchAllData();
+    }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading, isSaving]);    
 
     const generateDateRange = (startDate: string, endDate: string) => {
         const start = new Date(startDate);
@@ -70,6 +131,153 @@ const PlanPage: React.FC = () => {
 
     const tripDateRange = trip ? generateDateRange(trip.startDate, trip.endDate) : [];
 
+    const calculateRoute = async (origin: Place | ItineraryPlace, destination: Place | ItineraryPlace, mode: TransportMode, dateKey: string) => {
+        const directionsService = new google.maps.DirectionsService();
+        
+        const originPosition = { 
+            lat: typeof origin.latitude === 'number' ? origin.latitude : parseFloat(origin.latitude), 
+            lng: typeof origin.longitude === 'number' ? origin.longitude : parseFloat(origin.longitude)
+        };
+        const destinationPosition = { 
+            lat: typeof destination.latitude === 'number' ? destination.latitude : parseFloat(destination.latitude), 
+            lng: typeof destination.longitude === 'number' ? destination.longitude : parseFloat(destination.longitude)
+        };
+
+        const convertTo24HourFormat = (time12h: string): string => {
+            const [time, modifier] = time12h.split(' ');
+            let [hours, minutes] = time.split(':');
+        
+            if (hours === '12') {
+                hours = '00';
+            }
+        
+            if (modifier === 'PM') {
+                hours = (parseInt(hours, 10) + 12).toString();
+            }
+        
+            return `${hours}:${minutes}`;
+        };
+
+        const date = new Date(dateKey); 
+
+        // 出發時間的優先序（leftTime > arrivedTime > now）
+        const departureTime = origin.leftTime 
+        ? new Date(`${dateKey}T${convertTo24HourFormat(origin.leftTime)}:00`) 
+        : origin.arrivedTime 
+        ? new Date(`${dateKey}T${convertTo24HourFormat(origin.arrivedTime)}:00`)
+        : new Date();
+
+        console.log('departureTime:', departureTime); //TODO
+
+        const request = {
+            origin: new google.maps.LatLng(originPosition.lat, originPosition.lng),
+            destination: new google.maps.LatLng(destinationPosition.lat, destinationPosition.lng),
+            travelMode: mode as google.maps.TravelMode,
+            ...(mode === 'TRANSIT' && {
+                transitOptions: {
+                    departureTime: new Date(),
+                    modes: ['BUS', 'RAIL', 'SUBWAY', 'TRAIN', 'TRAM'] as google.maps.TransitMode[],
+                    routingPreference: 'FEWER_TRANSFERS' as google.maps.TransitRoutePreference // 預設選擇較少轉乘的路線
+                }
+            })
+        };
+
+        console.log('request:', request); //TODO
+
+        try {
+            const result = await directionsService.route(request);
+
+            if (result && result.routes && result.routes.length > 0) {
+                const leg = result.routes[0].legs[0];
+                const duration = leg ? leg.duration?.value || 0 : 0;
+
+                if (duration === 0) {
+                    setRouteInfo(prevRouteInfo => ({
+                        ...prevRouteInfo,
+                        [dateKey]: {
+                            ...prevRouteInfo[dateKey],
+                            [`${origin.id}-${destination.id}`]: { duration: -1, mode }
+                        }
+                    }));
+                    console.log('duration:', duration); //TODO
+                } else {
+                    setRouteInfo(prevRouteInfo => ({
+                        ...prevRouteInfo,
+                        [dateKey]: {
+                            ...prevRouteInfo[dateKey],
+                            [`${origin.id}-${destination.id}`]: { duration: duration / 60, mode }
+                        }
+                    }));
+                    console.log('duration:', duration); //TODO
+                }
+            } else {
+                setRouteInfo(prevRouteInfo => ({
+                    ...prevRouteInfo,
+                    [dateKey]: {
+                        ...prevRouteInfo[dateKey],
+                        [`${origin.id}-${destination.id}`]: { duration: -1, mode }
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('Error calculating route:', error);
+            setRouteInfo(prevRouteInfo => ({
+                ...prevRouteInfo,
+                [dateKey]: {
+                    ...prevRouteInfo[dateKey],
+                    [`${origin.id}-${destination.id}`]: { duration: -1, mode }
+                }
+            }));
+        }
+    };
+
+    // 交通方式變更
+    const handleModeChange = (dateKey: string, fromId: string, toId: string, newMode: TransportMode) => {
+        const fromPlace = itineraries[dateKey].find(place => place.id === fromId);
+        const toPlace = itineraries[dateKey].find(place => place.id === toId);
+        if (fromPlace && toPlace) {
+            calculateRoute(fromPlace, toPlace, newMode, dateKey);
+        }
+    };
+
+    // 輸入時間改變
+    const handleTimeChange = (e: ChangeEvent<HTMLInputElement>, dateKey: string, placeId: string, timeType: 'arrivedTime' | 'leftTime') => {
+        const newTime = e.target.value;
+
+        // 更新特定日期行程中的特定景點的時間
+        setItineraries(prevItineraries => {
+            const updatedItineraries = { ...prevItineraries };
+            const dayItinerary = updatedItineraries[dateKey].map((place) => 
+                place.id === placeId ? {  ...place, [timeType]: newTime } : place
+            );
+            
+            const currentPlace = dayItinerary.find(place => place.id === placeId);
+
+            if (currentPlace) {
+                const currentIndex = dayItinerary.indexOf(currentPlace);
+                const previousPlace = currentIndex > 0 ? dayItinerary[currentIndex - 1] : undefined;
+                const nextPlace = currentIndex < dayItinerary.length - 1 ? dayItinerary[currentIndex + 1] : undefined;
+    
+                if (timeType === 'leftTime' && previousPlace) {
+                    // 如輸入leftTime，重新計算前一個景點到currentPlace的路線
+                    calculateRoute(previousPlace, currentPlace, selectedMode, dateKey);
+                } else if (timeType === 'arrivedTime' && previousPlace && !currentPlace.leftTime) {
+                    // 如輸入arrivedTime但沒有leftTime，重新計算前一個景點到currentPlace的路線
+                    calculateRoute(previousPlace, currentPlace, selectedMode, dateKey);
+                }
+                if (timeType === 'leftTime' && nextPlace) {
+                    // 如輸入leftTime，重新計算currentPlace到下一個景點的路線
+                    calculateRoute(currentPlace, nextPlace, selectedMode, dateKey);
+                }
+            }
+    
+            return {
+                ...updatedItineraries,
+                [dateKey]: dayItinerary,
+            };
+        });
+    };
+    
     const onDragEnd = (result: any) => {
         const { source, destination } = result;
 
@@ -78,8 +286,7 @@ const PlanPage: React.FC = () => {
         }
 
         // 來源列表與目標列表
-        let sourceList: Place[] | undefined;
-        let destList: Place[] | undefined;
+        let sourceList: (Place | ItineraryPlace)[] | undefined;
 
         if (source.droppableId in itineraries) {
             sourceList = itineraries[source.droppableId];
@@ -88,38 +295,80 @@ const PlanPage: React.FC = () => {
             sourceList = placeList?.places;
         }
 
-        if (destination.droppableId in itineraries) {
-            destList = itineraries[destination.droppableId];
-        } else {
-            destList = itineraries[destination.droppableId] = [];
-        }
-
-        if (!sourceList || !destList) {
-            console.error("Source or destination list not found.");
+        if (!sourceList) {
+            console.error("Source list not found.");
             return;
         }
 
-        // 從來源列表移除拖曳item
-        const [movedItem] = sourceList.splice(source.index, 1);
+        // 從來源列表中找到被拖曳的item
+        const movedItem = sourceList[source.index];
 
         if (!movedItem) {
             console.error("Moved item not found.");
             return;
         }
 
-        // 添加到目標列表
-        destList.splice(destination.index, 0, movedItem);
+        // 目標列表
+        let destList: (Place | ItineraryPlace)[] = itineraries[destination.droppableId] || [];
+
+        // 當place的id不包含 "-" 时，才複製一個新的place（=從上方list拉下來的place才需要複製）
+        const newPlace = movedItem.id.includes("-")
+        ? movedItem // 如果包含"-"，則不複製
+        : {
+            ...movedItem,
+            id: `${movedItem.id}-${Date.now()}`,  // 以-現在時間做後綴生成一個新的ID來作為draggable的ID
+            originalPlaceId: movedItem.id,
+            title: movedItem.title,
+            address: movedItem.address,
+            latitude: movedItem.latitude,
+            longitude: movedItem.longitude,
+            note: movedItem.note || "",
+            placeListId: 'placeListId' in movedItem ? movedItem.placeListId : "", 
+            GoogleMapPlaceId: movedItem.GoogleMapPlaceId,
+            rating: movedItem.rating,
+            userRatingsTotal: movedItem.userRatingsTotal,
+            openingHours: movedItem.openingHours,
+            website: movedItem.website,
+            photoUrl: movedItem.photoUrl,
+            arrivedTime: null,
+            leftTime: null,
+            transportDuration: undefined,
+            transportMode: undefined
+        };
+
+        // 如果複製的新place不等於movedItem，才把新place放入目標列表中，避免重複
+        if (newPlace !== movedItem) {
+            destList.splice(destination.index, 0, newPlace);
+        } else {
+            // 如果是已存在的（即 id 包含 "-" 的place），僅移動它在目標列表的位置
+            sourceList.splice(source.index, 1); 
+            destList.splice(destination.index, 0, movedItem);
+        }
 
         setItineraries({
             ...itineraries,
-            [source.droppableId]: sourceList,
             [destination.droppableId]: destList,
         });
+
+        // 重新計算相鄰景點之間的路線
+        if (destList.length > 1) {
+            const index = destination.index;
+            if (index > 0) {
+                calculateRoute(destList[index - 1], newPlace, 'DRIVING', destination.droppableId);
+            }
+            if (index < destList.length - 1) {
+                calculateRoute(newPlace, destList[index + 1], 'DRIVING', destination.droppableId);
+            }
+        }
     };
     
     // 景點點擊
-    const handlePlaceClick = (place: Place) => {
-        const position = { lat: place.latitude, lng: place.longitude };
+    const handlePlaceClick = (place: Place | ItineraryPlace) => {
+        const position = { 
+            lat: typeof place.latitude === 'number' ? place.latitude : parseFloat(place.latitude), 
+            lng: typeof place.longitude === 'number' ? place.longitude : parseFloat(place.longitude) 
+        };
+
         setMarkerPosition(position);
         setSelectedPlace({
             ...place,
@@ -134,9 +383,10 @@ const PlanPage: React.FC = () => {
             opening_hours: place.openingHours ? {
                 weekday_text: Array.isArray(place.openingHours) ? place.openingHours : []
             } : undefined,
-            user_ratings_total: place.userRatingsTotal || 0
+            user_ratings_total: place.userRatingsTotal || 0,
         } as any);
         setInfoWindowOpen(true);
+        setPlacePhotoUrl(place.photoUrl || null);
 
         if (mapInstance) {
             mapInstance.panTo(position);
@@ -144,6 +394,99 @@ const PlanPage: React.FC = () => {
         }
     };
 
+
+    // 規劃區塊的行程景點刪除
+    const handleRemovePlace = (dateKey: string, placeId: string) => {
+        setItineraries(prevItineraries => {
+            const updatedItineraries = { ...prevItineraries };
+            const dayItinerary = updatedItineraries[dateKey].filter((place) => place.id !== placeId);
+            
+        const index = updatedItineraries[dateKey].findIndex(place => place.id === placeId);
+            if (index > 0 && index < updatedItineraries[dateKey].length - 1) {
+                const prevPlace = updatedItineraries[dateKey][index - 1];
+                const nextPlace = updatedItineraries[dateKey][index + 1];
+                calculateRoute(prevPlace, nextPlace, 'DRIVING', dateKey);
+            }
+
+            return {
+                ...updatedItineraries,
+                [dateKey]: dayItinerary,
+            };
+        });
+    };
+
+    const handleSaveItineraries = async () => {
+        if (!user || !tripId) return;
+    
+        try {
+            console.log("開始加載動畫和儲存行程至DB") //TODO
+            setIsSaving(true);  // 標記開始儲存的state
+            startLoading("儲存中..."); //loading動畫
+            
+            // 處理undefined的資料->改為null（避免firebase出錯）
+            const removeUndefined = (obj: any) => {
+                Object.keys(obj).forEach(key => {
+                    if (obj[key] === undefined) {
+                        // delete obj[key];
+                        obj[key] = null;
+                    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                        removeUndefined(obj[key]);
+                    }
+                });
+                return obj;
+            };
+
+            const itinerariesToSave: Itinerary[] = Object.entries(itineraries).map(([dateKey, places]) => ({
+                id: `${user.uid}_${tripId}_${dateKey}`,
+                date: dateKey,
+                userId: user.uid,
+                tripId: tripId,
+                places: places.map((place, index) => removeUndefined({
+                    id: `${place.id}-0`,  // 使用 place.id-0 作為存進 ItineraryPlace 的 id（例如O4e3SQTNqXIYmrDeRyVM-0）
+                    originalPlaceId: place.id.split("-")[0],  // 使用原始的 place.id 作為 originalPlaceId（例如O4e3SQTNqXIYmrDeRyVM）
+                    title: place.title,
+                    address: place.address,
+                    latitude: place.latitude,
+                    longitude: place.longitude,
+                    note: place.note || null,
+                    placeListId: place.placeListId,
+                    GoogleMapPlaceId: place.GoogleMapPlaceId,
+                    rating: place.rating || null,
+                    userRatingsTotal: place.userRatingsTotal || null,
+                    openingHours: place.openingHours || null,
+                    website: place.website || null,
+                    photoUrl: place.photoUrl || null,
+                    arrivedTime: place.arrivedTime || null,  
+                    leftTime: place.leftTime || null, 
+                    transportDuration: index > 0 ? routeInfo[dateKey]?.[`${places[index - 1].id}-${place.id}`]?.duration : undefined,
+                    transportMode: index > 0 ? routeInfo[dateKey]?.[`${places[index - 1].id}-${place.id}`]?.mode : undefined,
+                })),
+            }));
+
+        // 使用 batch 一次儲存多筆資料
+        const batch = writeBatch(db);
+        itinerariesToSave.forEach((itinerary) => {
+            const docRef = doc(db, "itineraries", itinerary.id);
+            batch.set(docRef, itinerary);
+        });
+
+        await batch.commit();
+
+        console.log("行程已成功儲存到 Firebase!");
+        startLoading("儲存成功!");
+        setTimeout(() => {
+            stopLoading();
+            setIsSaving(false);
+        }, 2000);
+
+    } catch (error) {
+        console.error("儲存行程時發生錯誤:", error);
+        stopLoading();
+        setIsSaving(false);
+    }
+    };
+
+    
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -159,7 +502,7 @@ const PlanPage: React.FC = () => {
 
     return (
         <div className="flex h-screen">
-            <div className="w-1/3 p-4 h-full overflow-y-auto bg-gray-100">
+            <div className="w-1/3 p-4 h-full overflow-y-auto custom-scrollbar-y bg-gray-100">
                 <div className="flex mb-3">
                     <div
                         onMouseEnter={() => setHovered(true)}
@@ -197,8 +540,10 @@ const PlanPage: React.FC = () => {
                         setInfoWindowOpen={setInfoWindowOpen}
                         placeLists={placeLists}
                         enableSearch={false} // 在 planning/page 中禁用搜尋功能
-                        enableMapClick={false} // 在 planning/page 中禁用地圖點擊功能
+                        // enableMapClick={false} // 在 planning/page 中禁用地圖點擊功能
                         onMapLoad={(map: google.maps.Map) => setMapInstance(map)}
+                        placePhotoUrl={placePhotoUrl}
+                        setPlacePhotoUrl={setPlacePhotoUrl}
                     />
                 </div>             
             </div>
@@ -214,7 +559,7 @@ const PlanPage: React.FC = () => {
                                         <div
                                             ref={provided.innerRef}
                                             {...provided.droppableProps}
-                                            className="flex-shrink-0 w-40 mr-4 p-4 border rounded-xl bg-white h-[250px] overflow-y-auto custom-scrollbar-y"
+                                            className="flex-shrink-0 w-40 mr-3 p-2 border rounded-xl bg-white h-[250px] overflow-y-auto custom-scrollbar-y"
                                         >
                                             <div className="text-lg font-bold mb-2 text-center">{placeList.title}</div>
                                             {placeList.places?.map((place, index) => (
@@ -228,7 +573,8 @@ const PlanPage: React.FC = () => {
                                                             onClick={() => handlePlaceClick(place)}
                                                         >
                                                             <div className="text-sm font-bold truncate" title={place.title}>{place.title}</div>
-                                                            <div className="text-xs text-gray-400">Rating: {place.rating}</div>
+                                                            <div className="text-xs text-gray-400 flex">
+                                                                <FaStar className="text-yellow-500 mr-1" /> {place.rating}/5</div>
                                                         </div>
                                                     )}
                                                 </Draggable>
@@ -243,8 +589,8 @@ const PlanPage: React.FC = () => {
                 
                     {/* 右下半部：行程規劃 */}
                     <div className="relative flex-3 basis-3/5 max-h-3/5 flex-grow overflow-hidden">
-                    <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mb-2 overflow-y-auto custom-scrollbar-y">
-                    <div className="flex flex-row align-top h-full ml-4">
+                        <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mb-2 h-full overflow-y-auto custom-scrollbar-y">
+                        <div className="flex flex-row align-top h-full ml-4">
                             {tripDateRange.map((date) => {
                                 const dateKey = date.toISOString().split('T')[0];
                                 const tasksForDate = itineraries[dateKey] || [];
@@ -255,7 +601,7 @@ const PlanPage: React.FC = () => {
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.droppableProps}
-                                                className="flex flex-col w-[200px] p-2 mr-4 border rounded-xl bg-white h-[350px]"
+                                                className="flex flex-col w-[200px] p-2 mr-4 border rounded-xl bg-white h-[800px] flex-grow"
                                             >
                                                 <div className="text-center font-bold">
                                                     {date.toLocaleDateString('zh-TW', {
@@ -270,31 +616,88 @@ const PlanPage: React.FC = () => {
                                                         請拖曳列表中景點至此
                                                     </div>
                                                 ) : (
-                                                    tasksForDate.map((task, index) => (
+                                                        tasksForDate.map((task, index) => (
+                                                            <React.Fragment key={task.id}>
+                                                                {index > 0 && (
+                                                                    <div className="p-2 mx-3 my-0 border-l-4 border-custom-kame bg-white text-sm flex items-center">
+                                                                        <select
+                                                                            onChange={(e) => handleModeChange(dateKey, tasksForDate[index-1].id, task.id, e.target.value as TransportMode)}
+                                                                            value={routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.mode || 'DRIVING'}
+                                                                            className="mr-2 p-1 text-sm"
+                                                                        >
+                                                                            {Object.entries(TRANSPORT_MODE_NAMES).map(([mode, name]) => (
+                                                                                <option key={mode} value={mode}>{name}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                        {routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.duration === -1 ? (
+                                                                            <span>暫無資訊</span>
+                                                                        ) : routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`] ? (
+                                                                            <span>{Math.round(routeInfo[dateKey][`${tasksForDate[index-1].id}-${task.id}`].duration)} 分鐘</span>
+                                                                        ) : (
+                                                                            '計算中...'
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                         <Draggable key={task.id} draggableId={task.id} index={index}>
                                                             {(provided) => (
                                                                 <div
                                                                     ref={provided.innerRef}
                                                                     {...provided.draggableProps}
                                                                     {...provided.dragHandleProps}
-                                                                    className="p-2 m-2 border rounded bg-gray-200 cursor-pointer"
+                                                                    className="p-2 m-2 border rounded bg-gray-200 cursor-pointer relative"
                                                                         onClick={() => handlePlaceClick(task)}
                                                                 >
-                                                                    <div className="text-sm font-bold truncate" title={task.title}>{task.title}</div>
+                                                                    <input
+                                                                        type="time"
+                                                                        value={task.arrivedTime || ""}
+                                                                        onChange={(e) => handleTimeChange(e, dateKey, task.id, 'arrivedTime')}
+                                                                        className="p-0 mb-1 text-sm border rounded"
+                                                                    />
+
+                                                                    <button 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation(); // 防止點擊刪除按鈕時觸發其他點擊事件
+                                                                            handleRemovePlace(dateKey, task.id);
+                                                                        }}
+                                                                        className="absolute top-1 right-2 text-custom-atomic-tangerine font-bold text-xs"
+                                                                    >
+                                                                        x
+                                                                    </button>
+
+                                                                    <div className="text-md font-bold truncate" title={task.title}>{task.title}</div>
                                                                     <div className="text-xs text-gray-600 truncate" title={task.address}>{task.address}</div>
-                                                                    <div className="text-xs text-gray-400">Rating: {task.rating}</div>
+                                                                    <div className="text-xs text-gray-400 flex">
+                                                                        <FaStar className="text-yellow-500 mr-1" />{task.rating}/5</div>
+
+                                                                    <input
+                                                                        type="time"
+                                                                        value={task.leftTime || ""}
+                                                                        onChange={(e) => handleTimeChange(e, dateKey, task.id, 'leftTime')}
+                                                                        className="p-0 mt-1 border text-sm rounded"
+                                                                    />
+                                                                
                                                                 </div>
                                                             )}
                                                         </Draggable>
+                                                        </React.Fragment>
                                                     ))
                                                 )}
                                                 {provided.placeholder}
                                             </div>
+
+                                            
                                         )}
                                     </Droppable>
                                 );
                             })}
                         </div>
+
+                        <button
+                            onClick={handleSaveItineraries}
+                            className="absolute bottom-8 right-4 opacity-50 bg-custom-atomic-tangerine text-white py-2 px-4 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 transition-colors active:scale-95 active:shadow-inner"
+                        >
+                            儲存行程
+                        </button>
                     </div>
                 </div>
                 </DragDropContext>
