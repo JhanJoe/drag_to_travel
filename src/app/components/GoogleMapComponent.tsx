@@ -222,7 +222,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                             alt={selectedPlace.name}
                                             width={125} 
                                             height={70} 
-                                            className="w-full h-auto mb-2 rounded m-0 p-0"
+                                            className="w-full h-auto mb-2 rounded m-0 p-0 object-cover"
                                         />
                                     )}
                                     <div className="p-2">

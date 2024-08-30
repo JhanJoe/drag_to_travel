@@ -569,7 +569,7 @@ const PlanPage: React.FC = () => {
                                                             ref={provided.innerRef}
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
-                                                            className="p-2 mb-2 border rounded bg-gray-200 cursor-pointer"
+                                                            className="p-2 mb-2 border rounded bg-gray-100 cursor-pointer"
                                                             onClick={() => handlePlaceClick(place)}
                                                         >
                                                             <div className="text-sm font-bold truncate" title={place.title}>{place.title}</div>
@@ -644,7 +644,7 @@ const PlanPage: React.FC = () => {
                                                                     ref={provided.innerRef}
                                                                     {...provided.draggableProps}
                                                                     {...provided.dragHandleProps}
-                                                                    className="p-2 m-2 border rounded bg-gray-200 cursor-pointer relative"
+                                                                    className="p-2 m-2 border rounded bg-gray-100 cursor-pointer relative"
                                                                         onClick={() => handlePlaceClick(task)}
                                                                 >
                                                                     <input
