@@ -211,7 +211,7 @@ const MapPage: React.FC = () => {
                     </div>
 
                     {/* RWD時，換成規劃的icon按鈕 */}
-                    <div className="fixed  lg:hidden right-5 bottom-[17%] flex flex-col space-y-2 z-10 opacity-80">
+                    <div className="fixed  lg:hidden right-5 bottom-[140px] flex flex-col space-y-2 z-10 opacity-80">
                         {/* <button
                             onClick={() => router.push(`/map?tripId=${tripId}`)}
                             className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-90"
@@ -303,7 +303,7 @@ const MapPage: React.FC = () => {
                 {/* 切換上下區塊高度變化按鈕 */}
                 <button
                     onClick={toggleLayout}
-                    className={`fixed block lg:hidden bottom-[24%] right-5 bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg opacity-80 hover:bg-custom-atomic-tangerine hover:opacity-100 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
+                    className={`fixed block lg:hidden bottom-[200px] right-5 bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg opacity-80 hover:bg-custom-atomic-tangerine hover:opacity-100 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
                 >
                     <FaArrowsAltV size={24} />
                 </button>
