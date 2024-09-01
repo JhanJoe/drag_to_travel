@@ -7,6 +7,7 @@ import { auth, signOut, User, onAuthStateChanged,} from "../../../firebase-confi
 import AuthModal from "./AuthModal";
 import { useAuth } from "../contexts/AuthContext";
 import Image from "next/image";
+import { IoLogOutOutline } from "react-icons/io5";
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();
@@ -47,14 +48,19 @@ const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          <Link href="/" className="hover:text-custom-atomic-tangerine">旅遊 X 拖拉</Link>
+          <Link href="/" className="hover:text-custom-atomic-tangerine hidden sm:block">旅遊 X 拖拉</Link>
         </div>
-        <div className="space-x-4">
+        <div className="space-x-4 flex items-center">
           {user ? (
             <>
-              <span className="text-custom-reseda-green">歡迎，{user.email}</span>
-              <Link href="/trips" className="bg-custom-kame p-2 rounded text-gray-600 hover:bg-custom-atomic-tangerine hover:text-white ">建立/選擇行程</Link>
-              <button onClick={handleSignOut} className="text-custom-reseda-green hover:text-custom-salmon" >會員登出</button>
+              <span className="text-custom-reseda-green text-xs xs:text-base transition-all duration-1000 ease-out">歡迎，{user.email}</span>
+              <Link href="/trips" className="bg-custom-kame px-2 py-1 rounded text-gray-600 hover:bg-custom-atomic-tangerine hover:text-white text-xs xs:text-base transition-all duration-1000 ease-out">建立/選擇行程</Link>
+              <button onClick={handleSignOut} className="text-custom-reseda-green hover:text-custom-atomic-tangerine transition-all duration-1000 ease-out" >
+                <span className="hidden sm:inline">會員登出</span>
+                <span className="sm:hidden inline text-2xl">
+                    <IoLogOutOutline />
+                </span>
+              </button>
             </>
           ) : (
             <>

@@ -13,6 +13,8 @@ const config: Config = {
         'custom-atomic-tangerine': '#FF9B71', //一種較飽和的粉橘色 rgb(255, 155, 113)
         'custom-reseda-green':'#5c745c', // 自定義顏色 reseda green 橄欖綠 rgb(82, 116, 87)
 
+        'custom-light-cyan': "#D0EEF1", //比瓶覗淡兩個階的綠色 rgb(208, 238, 241)
+
         'custom-caribbean-green':'#3c6e71', // 自定義顏色 Caribbean green 橄欖綠 rgb(60, 110, 113)
         'custom-hookers-green': '#496F5D', // 自定義顏色 hooker's green 橄欖綠 rgb(73, 111, 93)
         'custom-lapis':'#006696', // 自定義顏色 lapis lazuli 一種藍綠色 rgb(0, 102, 150)
@@ -49,6 +51,9 @@ const config: Config = {
         'fade-in-out': 'fade-in-out 28s infinite',
       },
 
+      screens: {
+        'xs': '480px', //自定義480px的RWD斷點
+      },
     },
   },
   plugins: [],

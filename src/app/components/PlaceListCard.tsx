@@ -73,7 +73,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                         </button>
                     )}
 
-                    <div className="text-lg font-bold text-center">{placeList.title}</div>
+                    <div className="text-base md:text-lg font-bold text-center">{placeList.title}</div>
                     <div className="text-center text-gray-400 text-sm">{placeList.notes}</div>
                     <div className="mt-2 overflow-y-auto flex-grow custom-scrollbar-y">
                     {placeList.places?.map((place) => {

@@ -57,17 +57,17 @@ const HomePage: React.FC = () => {
               alt={`Banner ${index + 1}`}
               fill
               style={{ objectFit: 'cover' }}
-              className="opacity-60" 
+              className="w-full h-auto sm:h-full opacity-60" 
             />
           </div>
         ))}
-          <div className="absolute inset-x-0 top-1/4 flex flex-col items-start px-20">
-            <h1 className="text-8xl font-bold text-custom-atomic-tangerine" style={{ textShadow: '2px 2px 4px rgba(255, 253, 130, 0.5)' }}>
+          <div className="absolute inset-x-0 top-1/4 flex flex-col items-center md:items-start px-20 md:justify-center ">
+            <h1 className="text-4xl xs:text-6xl md:text-8xl font-bold text-custom-atomic-tangerine transition-all duration-1000 ease-out" style={{ textShadow: '2px 2px 4px rgba(255, 253, 130, 0.5)'}}>
               旅遊 X 拖拉
             </h1>
             <div className="overflow-hidden h-16 mt-4">
             <span 
-              className={`text-2xl text-white inline-block ml-2 ${
+              className={`text-md xs:text-lg md:text-2xl text-white inline-block ml-2 ${
                 isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
               }`}
               style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',

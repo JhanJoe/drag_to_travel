@@ -39,7 +39,7 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-96 m-4">
             <h2 className="text-2xl mb-4 text-center">{trip ? "編輯行程" : "新增行程"}</h2>
             <input
             type="text"

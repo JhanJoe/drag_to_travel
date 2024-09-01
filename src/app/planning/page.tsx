@@ -11,6 +11,10 @@ import GoogleMapComponent from "../components/GoogleMapComponent";
 import { FaStar } from "react-icons/fa";
 import { db } from "../../../firebase-config";
 import { setDoc, updateDoc, doc, getDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { FaRegSave, FaMapMarkedAlt } from "react-icons/fa";
+import { TbDragDrop } from "react-icons/tb";
+import { MdExpandMore } from "react-icons/md";
+import Image from 'next/image';
 
 type TransportMode = 'DRIVING' | 'WALKING' | 'TRANSIT';
 
@@ -43,6 +47,12 @@ const PlanPage: React.FC = () => {
     const [savedItineraries, setSavedItineraries] = useState<Record<string, (Place | ItineraryPlace)[]>>({});
     const tripDataLoadingRef = useRef(false);
     const router = useRouter();
+    const [collapsedListIds, setCollapsedListIds] = useState<string[]>(() => {
+        const initialCollapsed = placeLists.slice(1).map(list => list.id); // 除了第一個 placeList 之外，所有的列表初始狀態都設為折疊
+        return initialCollapsed;
+    });
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); //紀錄是否有未儲存的更改
+    
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -73,7 +83,7 @@ const PlanPage: React.FC = () => {
                         const data = doc.data() as Itinerary;
                         savedData[data.date] = data.places.map((place: any) => ({
                             ...place,
-                            id: place.id || `${place.originalPlaceId}-00`, // 確保每個地點都有唯一的 id
+                            id: place.id || `${place.originalPlaceId}-${Date.now()}`, // 確保每個地點都有唯一的 id
                             latitude: place.latitude,
                             longitude: place.longitude,
                             transportDuration: place.transportDuration || undefined,
@@ -115,6 +125,7 @@ const PlanPage: React.FC = () => {
         fetchAllData();
     }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading, isSaving]);    
 
+    
     const generateDateRange = (startDate: string, endDate: string) => {
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -270,7 +281,8 @@ const PlanPage: React.FC = () => {
                     calculateRoute(currentPlace, nextPlace, selectedMode, dateKey);
                 }
             }
-    
+            setHasUnsavedChanges(true);
+
             return {
                 ...updatedItineraries,
                 [dateKey]: dayItinerary,
@@ -360,6 +372,8 @@ const PlanPage: React.FC = () => {
                 calculateRoute(newPlace, destList[index + 1], 'DRIVING', destination.droppableId);
             }
         }
+
+        setHasUnsavedChanges(true);
     };
     
     // 景點點擊
@@ -441,8 +455,10 @@ const PlanPage: React.FC = () => {
                 date: dateKey,
                 userId: user.uid,
                 tripId: tripId,
+                share:false,
+                public:false,
                 places: places.map((place, index) => removeUndefined({
-                    id: `${place.id}-0`,  // 使用 place.id-0 作為存進 ItineraryPlace 的 id（例如O4e3SQTNqXIYmrDeRyVM-0）
+                    id: `${place.id}`,  // 使用 place.id-date.now 作為存進 ItineraryPlace 的 id（例如O4e3SQTNqXIYmrDeRyVM-xxxxxxx）
                     originalPlaceId: place.id.split("-")[0],  // 使用原始的 place.id 作為 originalPlaceId（例如O4e3SQTNqXIYmrDeRyVM）
                     title: place.title,
                     address: place.address,
@@ -472,6 +488,7 @@ const PlanPage: React.FC = () => {
 
         await batch.commit();
 
+        setHasUnsavedChanges(false);
         console.log("行程已成功儲存到 Firebase!");
         startLoading("儲存成功!");
         setTimeout(() => {
@@ -486,7 +503,23 @@ const PlanPage: React.FC = () => {
     }
     };
 
+    const toggleCollapse = (listId: string) => {
+        setCollapsedListIds((prev) =>
+            prev.includes(listId) ? prev.filter((id) => id !== listId) : [...prev, listId]
+        );
+    };
     
+    //判斷列表中的place是否在規劃區塊中
+    const isPlaceInItinerary = (place: Place | ItineraryPlace): boolean => {
+        const result = Object.values(itineraries).some(dayItinerary =>
+            dayItinerary.some(itineraryPlace =>
+                itineraryPlace.id.includes(place.id)
+            )
+        );
+    console.log(`Place ${place.id} is in itinerary: `, result); //TODO
+    return result;
+    };
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -501,16 +534,17 @@ const PlanPage: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen">
-            <div className="w-1/3 p-4 h-full overflow-y-auto custom-scrollbar-y bg-gray-100">
-                <div className="flex mb-3">
+        <div className="flex h-screen flex-col-reverse lg:flex-row">
+            {/* 左半部的區塊 (行程名稱和地圖) */}
+            <div className="w-full lg:w-4/12  order-2 lg:order-1  h-1/3 lg:h-full  overflow-y-auto custom-scrollbar-y bg-gray-100">
+                <div className="mt-4 mb-3 mx-3 hidden lg:flex">
                     <div
                         onMouseEnter={() => setHovered(true)}
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
                         className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
                         ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
-                        地圖
+                        地圖頁面
                     </div>
                     <div
                         onMouseEnter={() => setHovered(false)}
@@ -518,19 +552,35 @@ const PlanPage: React.FC = () => {
                         className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
                         ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
-                        規劃
+                        規劃頁面
                     </div>
+                </div>
+                
+                {/* RWD時改為地圖icon */}
+                <div className="fixed flex flex-col lg:hidden right-5 top-28 space-y-2 z-10 opacity-80">
+                    <button
+                        onClick={() => router.push(`/map?tripId=${tripId}`)}
+                        className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100"
+                    >
+                        <FaMapMarkedAlt size={24} />
+                    </button>
+                    {/* <button
+                        onClick={() => router.push(`/planning?tripId=${tripId}`)}
+                        className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-90"
+                    >
+                        <TbDragDrop size={24} />
+                    </button> */}
                 </div>
 
                 {trip && (
-                    <div className="mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center">
-                        <div className="text-2xl font-bold">{trip.name}</div>
-                        <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
-                        <div className="text-gray-500">{trip.notes}</div>
+                    <div className="mx-3 mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center hidden lg:block">
+                        <div className="texl-xl lg:text-2xl font-bold transition-all duration-1000 ease-out">{trip.name}</div>
+                        <div className="text-xs lg:text-base">{`${trip.startDate} ~ ${trip.endDate}`}</div>
+                        <div className="text-gray-500 text-xs lg:text-base">{trip.notes}</div>
                     </div>
                 )}
 
-                <div className="flex-grow h-[calc(100%-8rem)]">
+                <div className="flex-grow h-[500px] lg:h-[calc(100%-8rem)]">
                     <GoogleMapComponent
                         markerPosition={markerPosition}
                         setMarkerPosition={setMarkerPosition}
@@ -540,7 +590,6 @@ const PlanPage: React.FC = () => {
                         setInfoWindowOpen={setInfoWindowOpen}
                         placeLists={placeLists}
                         enableSearch={false} // 在 planning/page 中禁用搜尋功能
-                        // enableMapClick={false} // 在 planning/page 中禁用地圖點擊功能
                         onMapLoad={(map: google.maps.Map) => setMapInstance(map)}
                         placePhotoUrl={placePhotoUrl}
                         setPlacePhotoUrl={setPlacePhotoUrl}
@@ -548,38 +597,58 @@ const PlanPage: React.FC = () => {
                 </div>             
             </div>
 
-            <div className="w-2/3 relative h-full flex flex-col">
+            <div className="relative  order-1 lg:order-2  w-full lg:w-8/12  h-2/3 lg:h-full  flex flex-row">
                 <DragDropContext onDragEnd={onDragEnd}>
-                    {/* 右上半部：景點列表 */}
-                    <div className="flex-2 overflow-hidden p-4 basis-2/5 max-h-2/5">
-                        <div className="flex overflow-x-scroll custom-scrollbar-x whitespace-nowrap mb-2">
+
+                    {/* 景點列表 */}
+                    <div className="flex flex-col w-1/2 sm:1/3 lg:w-1/4   h-full  p-4 custom-scrollbar-y overflow-y-auto transition-all duration-1000 ease-out">
+
+                        {trip && (
+                            <div className="mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center block lg:hidden">
+                                <div className="texl-xl lg:text-2xl font-bold overflow-hidden transition-all duration-1000 ease-out">{trip.name}</div>
+                                <div className="text-xs lg:text-base overflow-hidden">{`${trip.startDate} ~ ${trip.endDate}`}</div>
+                                <div className="text-gray-500 text-xs lg:text-base overflow-hidden">{trip.notes}</div>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col">
                             {placeLists.map((placeList) => (
                                 <Droppable droppableId={placeList.id} direction="vertical" key={placeList.id}>
                                     {(provided) => (
                                         <div
                                             ref={provided.innerRef}
                                             {...provided.droppableProps}
-                                            className="flex-shrink-0 w-40 mr-3 p-2 border rounded-xl bg-white h-[250px] overflow-y-auto custom-scrollbar-y"
+                                            className="flex-shrink-0 p-2 border rounded-xl bg-white mb-4 h-auto min-w-[100px] w-full overflow-y-auto custom-scrollbar-y"
                                         >
-                                            <div className="text-lg font-bold mb-2 text-center">{placeList.title}</div>
-                                            {placeList.places?.map((place, index) => (
+                                            <div className="flex justify-center items-center text-lg font-bold mb-2 text-center cursor-pointer ${placeList.places && placeList.places.length > 0 ? 'text-black' : 'text-gray-400'}`" onClick={() => toggleCollapse(placeList.id)}>
+                                                {placeList.title}
+                                                <MdExpandMore
+                                                    className={`${collapsedListIds.includes(placeList.id) ? 'rotate-0' : 'rotate-180'} transition-transform`}
+                                                />
+                                            </div>
+                                            <div className={`transition-max-height duration-500 ease-in-out overflow-hidden ${collapsedListIds.includes(placeList.id) ? 'max-h-0' : 'max-h-[400px]'}`}>
+                                            {!collapsedListIds.includes(placeList.id) && placeList.places?.map((place, index) => (
                                                 <Draggable key={place.id} draggableId={place.id} index={index}>
-                                                    {(provided) => (
+                                                    {(provided) => {
+                                                        const isInItinerary = isPlaceInItinerary(place); // 檢查列表中的place是否在行程中
+
+                                                        return (
                                                         <div
                                                             ref={provided.innerRef}
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
-                                                            className="p-2 mb-2 border rounded bg-gray-100 cursor-pointer"
-                                                            onClick={() => handlePlaceClick(place)}
+                                                            className={`p-2 mb-2 border rounded ${isInItinerary ? 'bg-gray-200 text-gray-400' : 'bg-custom-light-cyan cursor-pointer'}`}
+                                                            onClick={() => handlePlaceClick(place) }
                                                         >
                                                             <div className="text-sm font-bold truncate" title={place.title}>{place.title}</div>
-                                                            <div className="text-xs text-gray-400 flex">
-                                                                <FaStar className="text-yellow-500 mr-1" /> {place.rating}/5</div>
                                                         </div>
-                                                    )}
+            );
+        }}
+                                                    
                                                 </Draggable>
                                             ))}
                                             {provided.placeholder}
+                                        </div>
                                         </div>
                                     )}
                                 </Droppable>
@@ -587,118 +656,146 @@ const PlanPage: React.FC = () => {
                         </div>
                     </div>
                 
-                    {/* 右下半部：行程規劃 */}
-                    <div className="relative flex-3 basis-3/5 max-h-3/5 flex-grow overflow-hidden">
-                        <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mb-2 h-full overflow-y-auto custom-scrollbar-y">
-                        <div className="flex flex-row align-top h-full ml-4">
-                            {tripDateRange.map((date) => {
-                                const dateKey = date.toISOString().split('T')[0];
-                                const tasksForDate = itineraries[dateKey] || [];
+                    {/* 行程規劃 */}
+                    <div className="relative  flex flex-col lg:flex-grow  w-1/2 sm:w-2/3 lg:w-3/4 overflow-auto transition-all duration-1000 ease-out">
+                        <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mt-4 mb-2 h-full overflow-y-auto custom-scrollbar-y">
+                            <div className="flex flex-row align-top h-full ml-4">
+                                {tripDateRange.map((date) => {
+                                    const dateKey = date.toISOString().split('T')[0];
+                                    const tasksForDate = itineraries[dateKey] || [];
 
-                                return (
-                                    <Droppable droppableId={dateKey} key={dateKey}>
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.droppableProps}
-                                                className="flex flex-col w-[200px] p-2 mr-4 border rounded-xl bg-white h-[800px] flex-grow"
-                                            >
-                                                <div className="text-center font-bold">
-                                                    {date.toLocaleDateString('zh-TW', {
-                                                            year: 'numeric',
-                                                            month: '2-digit',
-                                                            day: '2-digit'
-                                                    })}
-                                                </div>
-                                                
-                                                {tasksForDate.length === 0 ? (
-                                                    <div className="flex-grow flex items-center justify-center text-gray-400">
-                                                        請拖曳列表中景點至此
+                                    return (
+                                        <Droppable droppableId={dateKey} key={dateKey}>
+                                            {(provided) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.droppableProps}
+                                                    className="flex flex-col w-[180px] sm:w-[270px] p-2 mr-4 border rounded-xl bg-white min-h-[1000px] h-fit"
+                                                >
+                                                    <div className="text-center font-bold">
+                                                        {date.toLocaleDateString('zh-TW', {
+                                                                year: 'numeric',
+                                                                month: '2-digit',
+                                                                day: '2-digit'
+                                                        })}
                                                     </div>
-                                                ) : (
-                                                        tasksForDate.map((task, index) => (
-                                                            <React.Fragment key={task.id}>
-                                                                {index > 0 && (
-                                                                    <div className="p-2 mx-3 my-0 border-l-4 border-custom-kame bg-white text-sm flex items-center">
-                                                                        <select
-                                                                            onChange={(e) => handleModeChange(dateKey, tasksForDate[index-1].id, task.id, e.target.value as TransportMode)}
-                                                                            value={routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.mode || 'DRIVING'}
-                                                                            className="mr-2 p-1 text-sm"
+                                                    
+                                                    {tasksForDate.length === 0 ? (
+                                                        <div className="flex flex-wrap items-start pt-20 justify-center text-gray-400">
+                                                            請拖曳列表中景點至此
+                                                        </div>
+                                                    ) : (
+                                                            tasksForDate.map((task, index) => (
+                                                                <React.Fragment key={task.id}>
+                                                                    {index > 0 && (
+                                                                        <div className="p-1 mx-10 my-0 border-l-4 border-dotted border-custom-kame bg-white text-sm flex items-center justify-center">
+                                                                            <select
+                                                                                onChange={(e) => handleModeChange(dateKey, tasksForDate[index-1].id, task.id, e.target.value as TransportMode)}
+                                                                                value={routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.mode || 'DRIVING'}
+                                                                                className="mr-1 p-1 text-sm"
+                                                                            >
+                                                                                {Object.entries(TRANSPORT_MODE_NAMES).map(([mode, name]) => (
+                                                                                    <option key={mode} value={mode}>{name}</option>
+                                                                                ))}
+                                                                            </select>
+                                                                            {routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.duration === -1 ? (
+                                                                                <span>暫無資訊</span>
+                                                                            ) : routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`] ? (
+                                                                                <span>{Math.round(routeInfo[dateKey][`${tasksForDate[index-1].id}-${task.id}`].duration)} 分</span>
+                                                                            ) : (
+                                                                                '計算中...'
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                                                                {(provided) => (
+                                                                    <div
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                        className="flex flex-col sm:flex-row items-start sm:items-center p-2 m-2 border rounded bg-gray-100 cursor-pointer relative overflow-hidden"
+                                                                            onClick={() => handlePlaceClick(task)}
+                                                                    >
+                                                                        <div className="w-16 h-16 sm:w-20 sm:h-20 mr-3 flex-shrink-0 relative">
+                                                                            <Image 
+                                                                                src={task.photoUrl || "/landscape-image.png"} 
+                                                                                alt={task.title} 
+                                                                                fill
+                                                                                style={{ objectFit: 'cover' }}
+                                                                                className="rounded"
+                                                                            />
+                                                                        </div>
+
+                                                                        <div className="flex-grow overflow-hidden">
+                                                                        <div className="flex-row items-center">
+                                                                            <span className="text-xs">抵達 </span>
+                                                                        <input
+                                                                            type="time"
+                                                                            value={task.arrivedTime || ""}
+                                                                            onChange={(e) => handleTimeChange(e, dateKey, task.id, 'arrivedTime')}
+                                                                            className="p-0 mb-1 text-xs border rounded"
+                                                                        />
+                                                                        </div>
+
+                                                                        <button 
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation(); // 防止點擊刪除按鈕時觸發其他點擊事件
+                                                                                handleRemovePlace(dateKey, task.id);
+                                                                            }}
+                                                                            className="absolute top-0 right-1 text-custom-atomic-tangerine font-bold text-xs"
                                                                         >
-                                                                            {Object.entries(TRANSPORT_MODE_NAMES).map(([mode, name]) => (
-                                                                                <option key={mode} value={mode}>{name}</option>
-                                                                            ))}
-                                                                        </select>
-                                                                        {routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.duration === -1 ? (
-                                                                            <span>暫無資訊</span>
-                                                                        ) : routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`] ? (
-                                                                            <span>{Math.round(routeInfo[dateKey][`${tasksForDate[index-1].id}-${task.id}`].duration)} 分鐘</span>
-                                                                        ) : (
-                                                                            '計算中...'
-                                                                        )}
+                                                                            x
+                                                                        </button>
+
+                                                                        <div className="text-base font-bold truncate" title={task.title}>{task.title}</div>
+                                                                        <div className="text-xs text-gray-600 truncate" title={task.address}>{task.address}</div>
+                                                                        {/* <div className="text-xs text-gray-400 flex">
+                                                                            <FaStar className="text-yellow-500 mr-1" />{task.rating}/5</div> */}
+
+                                                                        <div className="flex-row items-center">
+                                                                        <span className="text-xs">離開 </span>
+                                                                        <input
+                                                                            type="time"
+                                                                            value={task.leftTime || ""}
+                                                                            onChange={(e) => handleTimeChange(e, dateKey, task.id, 'leftTime')}
+                                                                            className="p-0 mt-1 border text-xs rounded"
+                                                                        />
+                                                                        </div>
+                                                                    
+                                                                    </div>
                                                                     </div>
                                                                 )}
-                                                        <Draggable key={task.id} draggableId={task.id} index={index}>
-                                                            {(provided) => (
-                                                                <div
-                                                                    ref={provided.innerRef}
-                                                                    {...provided.draggableProps}
-                                                                    {...provided.dragHandleProps}
-                                                                    className="p-2 m-2 border rounded bg-gray-100 cursor-pointer relative"
-                                                                        onClick={() => handlePlaceClick(task)}
-                                                                >
-                                                                    <input
-                                                                        type="time"
-                                                                        value={task.arrivedTime || ""}
-                                                                        onChange={(e) => handleTimeChange(e, dateKey, task.id, 'arrivedTime')}
-                                                                        className="p-0 mb-1 text-sm border rounded"
-                                                                    />
+                                                            </Draggable>
+                                                            </React.Fragment>
+                                                        ))
+                                                    )}
+                                                    {provided.placeholder}
+                                                </div>
 
-                                                                    <button 
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation(); // 防止點擊刪除按鈕時觸發其他點擊事件
-                                                                            handleRemovePlace(dateKey, task.id);
-                                                                        }}
-                                                                        className="absolute top-1 right-2 text-custom-atomic-tangerine font-bold text-xs"
-                                                                    >
-                                                                        x
-                                                                    </button>
-
-                                                                    <div className="text-md font-bold truncate" title={task.title}>{task.title}</div>
-                                                                    <div className="text-xs text-gray-600 truncate" title={task.address}>{task.address}</div>
-                                                                    <div className="text-xs text-gray-400 flex">
-                                                                        <FaStar className="text-yellow-500 mr-1" />{task.rating}/5</div>
-
-                                                                    <input
-                                                                        type="time"
-                                                                        value={task.leftTime || ""}
-                                                                        onChange={(e) => handleTimeChange(e, dateKey, task.id, 'leftTime')}
-                                                                        className="p-0 mt-1 border text-sm rounded"
-                                                                    />
-                                                                
-                                                                </div>
-                                                            )}
-                                                        </Draggable>
-                                                        </React.Fragment>
-                                                    ))
-                                                )}
-                                                {provided.placeholder}
-                                            </div>
-
-                                            
-                                        )}
-                                    </Droppable>
-                                );
-                            })}
-                        </div>
-
-                        <button
-                            onClick={handleSaveItineraries}
-                            className="absolute bottom-8 right-4 opacity-50 bg-custom-atomic-tangerine text-white py-2 px-4 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 transition-colors active:scale-95 active:shadow-inner"
-                        >
-                            儲存行程
-                        </button>
+                                                
+                                            )}
+                                        </Droppable>
+                                    );
+                                })}
+                            </div>
                     </div>
+                    
+                    <button
+                            onClick={handleSaveItineraries}
+                            className={`z-50 fixed top-[40%] right-5 lg:top-24 lg:right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
+                        >
+                            <div className="relative flex items-center">
+                                <FaRegSave
+                                    className="text-white text-2xl"
+                                    title="儲存行程"
+                                />
+                                <span className="hidden lg:block ml-2">儲存行程</span>
+                            </div>
+
+                            {hasUnsavedChanges && (
+                                <span className={`absolute top-0 right-0 block h-3 w-3 bg-red-600 rounded-full ${hasUnsavedChanges ? 'animate-ping' : ''}`}></span>
+                            )}
+                        </button>
                 </div>
                 </DragDropContext>
             </div>

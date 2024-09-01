@@ -10,6 +10,8 @@ import GoogleMapComponent from "../components/GoogleMapComponent";
 import { useAuth } from "../contexts/AuthContext";
 import { useTripContext } from "../contexts/TripContext";
 import { useLoading } from "../contexts/LoadingContext";
+import { FaMapMarkedAlt } from "react-icons/fa";
+import { TbDragDrop } from "react-icons/tb";
 
 const MapPage: React.FC = () => {  
     const { user } = useAuth();
@@ -179,17 +181,17 @@ const MapPage: React.FC = () => {
     }
 
     return (
-            <div className="flex h-screen">
+            <div className="flex-col lg:flex-row flex h-screen">
 
-                <div className="w-1/3 p-3 overflow-y-auto custom-scrollbar-y bg-gray-100">
-                    <div className="flex mt-2 mb-3">
+                <div className="w-full lg:w-1/3 order-2 lg:order-1  h-1/3 lg:h-full  p-3 overflow-y-auto custom-scrollbar-y bg-gray-100">
+                    <div className="mt-5 mb-3 mx-6 lg:mx-2 hidden flex lg:flex">
                         <div
                             onMouseEnter={() => setHovered(false)}
                             onClick={() => router.push(`/map?tripId=${tripId}`)}
                             className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
                             ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                         >
-                            地圖
+                            地圖頁面
                         </div>
                         <div
                             onMouseEnter={() => setHovered(true)}
@@ -197,19 +199,35 @@ const MapPage: React.FC = () => {
                             className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
                             ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                         >
-                            規劃
+                            規劃頁面
                         </div>
                     </div>
 
+                    {/* RWD時，換成規劃的icon按鈕 */}
+                    <div className="fixed  lg:hidden right-5 top-28 flex flex-col space-y-2 z-10 opacity-80">
+                        {/* <button
+                            onClick={() => router.push(`/map?tripId=${tripId}`)}
+                            className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-90"
+                        >
+                            <FaMapMarkedAlt size={24} />
+                        </button> */}
+                        <button
+                            onClick={() => router.push(`/planning?tripId=${tripId}`)}
+                            className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100"
+                        >
+                            <TbDragDrop size={24} />
+                        </button>
+                    </div>
+
                     {trip && (
-                        <div className="mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center">
-                            <div className="text-2xl font-bold">{trip.name}</div>
-                            <div>{`${trip.startDate} ~ ${trip.endDate}`}</div>
-                            <div className="text-gray-500">{trip.notes}</div>
+                        <div className="mx-6 lg:mx-0 mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center">
+                            <div className="texl-xl md:text-2xl font-bold transition-all duration-1000 ease-out">{trip.name}</div>
+                            <div className="text-xs md:text-base">{`${trip.startDate} ~ ${trip.endDate}`}</div>
+                            <div className="text-gray-500 text-xs md:text-base">{trip.notes}</div>
                         </div>
                     )}
-                    <h2 className="text-xl font-bold mb-2 text-center">景點列表</h2>
-                    <div className="grid grid-cols-2 gap-2">
+                    <h2 className="textl-lg md:text-xl font-bold mb-2 text-center">景點列表</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 transition-all duration-1000 ease-out px-6 lg:px-0">
                         {placeLists.map((placeList) => (
                             <PlaceListCard
                                 key={placeList.id}
@@ -257,7 +275,8 @@ const MapPage: React.FC = () => {
                     
                 </div>
 
-                <div className="w-2/3 relative h-full">
+                {/* 右半部：地圖 */}
+                <div className="relative w-full lg:w-2/3  h-2/3 lg:h-full  order-1 lg:order-2">
                     <GoogleMapComponent
                             markerPosition={markerPosition}
                             setMarkerPosition={setMarkerPosition}
