@@ -276,7 +276,7 @@ const MapPage: React.FC = () => {
                 </div>
 
                 {/* 右半部：地圖 */}
-                <div className="relative w-full lg:w-2/3  h-2/3 lg:h-full  order-1 lg:order-2">
+                <div className="relative w-full lg:w-2/3  h-2/3 lg:h-full  order-1 lg:order-2  resize-y lg:resize-none min-h-[20%] max-h-[80%] extend">
                     <GoogleMapComponent
                             markerPosition={markerPosition}
                             setMarkerPosition={setMarkerPosition}

@@ -30,7 +30,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 bg-white shadow-md flex justify-between items-center px-4 py-2 z-30">
+      <nav className="fixed top-0 left-0 right-0 bg-white shadow-md flex justify-between items-center px-4 py-0 sm:py-2 z-30">
         <div className="flex items-center text-2xl font-bold text-custom-reseda-green">
           <Link href="/">
               <div 

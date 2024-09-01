@@ -29,7 +29,7 @@ export default function RootLayout({
               {children}
             </main>
           
-            <footer className="w-full bg-custom-kame text-custom-dark-green text-center p-3 mt-auto">
+            <footer className="p-1 sm:p-3  text-xs sm:text-base  w-full bg-custom-kame text-custom-dark-green opacity-40 sm:opacity-100 text-center mt-auto">
               <div>Copyright @2024 WeHelp #5</div>
             </footer>
             </LoadingProvider>

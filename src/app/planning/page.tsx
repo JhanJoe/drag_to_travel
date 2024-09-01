@@ -782,7 +782,7 @@ const PlanPage: React.FC = () => {
                     
                     <button
                             onClick={handleSaveItineraries}
-                            className={`z-50 fixed top-[40%] right-5 lg:top-24 lg:right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
+                            className={`z-50 fixed bottom-[15%] right-5 lg:top-24 lg:right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
                         >
                             <div className="relative flex items-center">
                                 <FaRegSave
