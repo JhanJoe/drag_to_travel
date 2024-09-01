@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-TW">
-      <body className={inter.className + "pt-9 flex flex-col min-h-screen"}>
+      <body className={inter.className + " pt-9 flex flex-col min-h-screen"}>
         <AuthProvider>
           <TripProvider>
             <LoadingProvider>
