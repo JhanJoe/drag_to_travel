@@ -15,6 +15,8 @@ import { FaRegSave, FaMapMarkedAlt } from "react-icons/fa";
 import { TbDragDrop } from "react-icons/tb";
 import { MdExpandMore } from "react-icons/md";
 import Image from 'next/image';
+import { FaArrowsAltV } from "react-icons/fa";
+
 
 type TransportMode = 'DRIVING' | 'WALKING' | 'TRANSIT';
 
@@ -52,6 +54,8 @@ const PlanPage: React.FC = () => {
         return initialCollapsed;
     });
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); //紀錄是否有未儲存的更改
+    const [topDivLarger, setTopDivLarger] = useState(true); // 切換上下佈局比例
+
     
 
     useEffect(() => {
@@ -520,6 +524,11 @@ const PlanPage: React.FC = () => {
     return result;
     };
 
+    // RWD時切換上下區塊比例
+    const toggleLayout = () => {
+        setTopDivLarger((prev) => !prev);
+    };
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -535,8 +544,8 @@ const PlanPage: React.FC = () => {
 
     return (
         <div className="flex h-screen flex-col-reverse lg:flex-row">
-            {/* 左半部的區塊 (行程名稱和地圖) */}
-            <div className="w-full lg:w-4/12  order-2 lg:order-1  h-1/3 lg:h-full  overflow-y-auto custom-scrollbar-y bg-gray-100">
+            {/* 左半部的區塊 (地圖 & 行程名稱?) */}
+            <div className={`w-full lg:w-4/12  order-2 lg:order-1  ${topDivLarger ? "h-[33.33%]" : "h-[10%]"} lg:h-full  overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
                 <div className="mt-4 mb-3 mx-3 hidden lg:flex">
                     <div
                         onMouseEnter={() => setHovered(true)}
@@ -557,10 +566,10 @@ const PlanPage: React.FC = () => {
                 </div>
                 
                 {/* RWD時改為地圖icon */}
-                <div className="fixed flex flex-col lg:hidden right-5 top-28 space-y-2 z-10 opacity-80">
+                <div className="fixed flex flex-col lg:hidden bottom-[17%] right-5 space-y-2 z-10 opacity-80">
                     <button
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
-                        className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100"
+                        className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 active:scale-95 active:shadow-inner"
                     >
                         <FaMapMarkedAlt size={24} />
                     </button>
@@ -597,11 +606,11 @@ const PlanPage: React.FC = () => {
                 </div>             
             </div>
 
-            <div className="relative  order-1 lg:order-2  w-full lg:w-8/12  h-2/3 lg:h-full  flex flex-row">
+            <div className={`relative  order-1 lg:order-2  w-full lg:w-8/12  ${topDivLarger ? "h-[66.67%]" : "h-[90%]"} lg:h-full  flex flex-row transition-all duration-500 ease-in-out`}>
                 <DragDropContext onDragEnd={onDragEnd}>
 
                     {/* 景點列表 */}
-                    <div className="flex flex-col w-1/2 sm:1/3 lg:w-1/4   h-full  p-4 custom-scrollbar-y overflow-y-auto transition-all duration-1000 ease-out">
+                    <div className="flex flex-col w-[45%] sm:1/3 lg:w-1/4   h-full  p-4 custom-scrollbar-y overflow-y-auto transition-all duration-1000 ease-out">
 
                         {trip && (
                             <div className="mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center block lg:hidden">
@@ -657,7 +666,7 @@ const PlanPage: React.FC = () => {
                     </div>
                 
                     {/* 行程規劃 */}
-                    <div className="relative  flex flex-col lg:flex-grow  w-1/2 sm:w-2/3 lg:w-3/4 overflow-auto transition-all duration-1000 ease-out">
+                    <div className="relative  flex flex-col lg:flex-grow  w-[55%] sm:w-2/3 lg:w-3/4 overflow-auto transition-all duration-1000 ease-out">
                         <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mt-4 mb-2 h-full overflow-y-auto custom-scrollbar-y">
                             <div className="flex flex-row align-top h-full ml-4">
                                 {tripDateRange.map((date) => {
@@ -670,7 +679,7 @@ const PlanPage: React.FC = () => {
                                                 <div
                                                     ref={provided.innerRef}
                                                     {...provided.droppableProps}
-                                                    className="flex flex-col w-[180px] sm:w-[270px] p-2 mr-4 border rounded-xl bg-white min-h-[1000px] h-fit"
+                                                    className="flex flex-col w-[180px] sm:w-[270px] p-2 mr-4 border rounded-xl bg-white min-h-[1000px] h-fit transition-all duration-1000 ease-out"
                                                 >
                                                     <div className="text-center font-bold">
                                                         {date.toLocaleDateString('zh-TW', {
@@ -688,7 +697,7 @@ const PlanPage: React.FC = () => {
                                                             tasksForDate.map((task, index) => (
                                                                 <React.Fragment key={task.id}>
                                                                     {index > 0 && (
-                                                                        <div className="p-1 mx-10 my-0 border-l-4 border-dotted border-custom-kame bg-white text-sm flex items-center justify-center">
+                                                                        <div className="p-1 mx-4 sm:mx-10 my-0 border-l-4 border-dotted border-custom-kame bg-white text-sm flex items-center justify-center transition-all duration-1000 ease-out">
                                                                             <select
                                                                                 onChange={(e) => handleModeChange(dateKey, tasksForDate[index-1].id, task.id, e.target.value as TransportMode)}
                                                                                 value={routeInfo[dateKey]?.[`${tasksForDate[index-1].id}-${task.id}`]?.mode || 'DRIVING'}
@@ -713,7 +722,7 @@ const PlanPage: React.FC = () => {
                                                                         ref={provided.innerRef}
                                                                         {...provided.draggableProps}
                                                                         {...provided.dragHandleProps}
-                                                                        className="flex flex-col sm:flex-row items-start sm:items-center p-2 m-2 border rounded bg-gray-100 cursor-pointer relative overflow-hidden"
+                                                                        className="flex flex-col sm:flex-row items-start sm:items-center p-2 m-2 border rounded bg-gray-100 cursor-pointer relative overflow-hidden transition-all duration-1000 ease-out"
                                                                             onClick={() => handlePlaceClick(task)}
                                                                     >
                                                                         <div className="w-16 h-16 sm:w-20 sm:h-20 mr-3 flex-shrink-0 relative">
@@ -782,9 +791,9 @@ const PlanPage: React.FC = () => {
                     
                     <button
                             onClick={handleSaveItineraries}
-                            className={`z-50 fixed bottom-[15%] right-5 lg:top-24 lg:right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
+                            className={`z-50 fixed bottom-[10%] right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
                         >
-                            <div className="relative flex items-center">
+                            <div className="relative flex items-center active:scale-95 active:shadow-inner">
                                 <FaRegSave
                                     className="text-white text-2xl"
                                     title="儲存行程"
@@ -799,7 +808,15 @@ const PlanPage: React.FC = () => {
                 </div>
                 </DragDropContext>
             </div>
-        </div>
+
+            {/* 切換上下區塊高度變化按鈕 */}
+            <button
+                onClick={toggleLayout}
+                className={`fixed block lg:hidden bottom-[24%] right-5 bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg opacity-80 hover:bg-custom-atomic-tangerine hover:opacity-100 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
+            >
+                <FaArrowsAltV size={24} />
+            </button>
+    </div>
     );
 };
 

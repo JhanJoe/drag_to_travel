@@ -204,7 +204,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 onLoad={onLoad}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
                 zoom={10}
-                options={{ mapTypeControl: false, gestureHandling: 'cooperative', }} // 取消地圖/衛星切換功能
+                options={{ mapTypeControl: false, gestureHandling: 'cooperative', streetViewControl: false, }} // 取消地圖/衛星切換功能、街景小人功能
                 onClick={handleMapClick}
             >
                 {markerPosition && (

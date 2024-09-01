@@ -12,6 +12,7 @@ import { useTripContext } from "../contexts/TripContext";
 import { useLoading } from "../contexts/LoadingContext";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { TbDragDrop } from "react-icons/tb";
+import { FaArrowsAltV } from "react-icons/fa";
 
 const MapPage: React.FC = () => {  
     const { user } = useAuth();
@@ -28,6 +29,7 @@ const MapPage: React.FC = () => {
     const tripDataLoadingRef = useRef(false); // 使用 useRef 來跟踪 tripDataLoading 狀態
     const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
     const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null);
+    const [topDivLarger, setTopDivLarger] = useState(true); // 切換上下佈局比例
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -176,6 +178,11 @@ const MapPage: React.FC = () => {
         }
     };
 
+    // RWD時切換上下區塊比例
+    const toggleLayout = () => {
+        setTopDivLarger((prev) => !prev);
+    };
+
     if (!tripId || !user) {
         return <div>Loading...</div>;
     }
@@ -183,7 +190,7 @@ const MapPage: React.FC = () => {
     return (
             <div className="flex-col lg:flex-row flex h-screen">
 
-                <div className="w-full lg:w-1/3 order-2 lg:order-1  h-1/3 lg:h-full  p-3 overflow-y-auto custom-scrollbar-y bg-gray-100">
+                <div className={`w-full lg:w-1/3 order-2 lg:order-1  h-${topDivLarger ? '1/3' : '2/3'} lg:h-full  p-3 overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
                     <div className="mt-5 mb-3 mx-6 lg:mx-2 hidden flex lg:flex">
                         <div
                             onMouseEnter={() => setHovered(false)}
@@ -204,7 +211,7 @@ const MapPage: React.FC = () => {
                     </div>
 
                     {/* RWD時，換成規劃的icon按鈕 */}
-                    <div className="fixed  lg:hidden right-5 top-28 flex flex-col space-y-2 z-10 opacity-80">
+                    <div className="fixed  lg:hidden right-5 bottom-[17%] flex flex-col space-y-2 z-10 opacity-80">
                         {/* <button
                             onClick={() => router.push(`/map?tripId=${tripId}`)}
                             className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-90"
@@ -213,7 +220,7 @@ const MapPage: React.FC = () => {
                         </button> */}
                         <button
                             onClick={() => router.push(`/planning?tripId=${tripId}`)}
-                            className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100"
+                            className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg opacity-80 hover:bg-custom-atomic-tangerine hover:opacity-100 active:scale-95 active:shadow-inner"
                         >
                             <TbDragDrop size={24} />
                         </button>
@@ -276,7 +283,7 @@ const MapPage: React.FC = () => {
                 </div>
 
                 {/* 右半部：地圖 */}
-                <div className="relative w-full lg:w-2/3  h-2/3 lg:h-full  order-1 lg:order-2  resize-y lg:resize-none min-h-[20%] max-h-[80%] extend">
+                <div className={`relative w-full lg:w-2/3 h-${topDivLarger ? "2/3" : "1/3"} lg:h-full  order-1 lg:order-2 transition-all duration-500 ease-in-out`}>
                     <GoogleMapComponent
                             markerPosition={markerPosition}
                             setMarkerPosition={setMarkerPosition}
@@ -292,6 +299,14 @@ const MapPage: React.FC = () => {
                     />
                     
                 </div>
+
+                {/* 切換上下區塊高度變化按鈕 */}
+                <button
+                    onClick={toggleLayout}
+                    className={`fixed block lg:hidden bottom-[24%] right-5 bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg opacity-80 hover:bg-custom-atomic-tangerine hover:opacity-100 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
+                >
+                    <FaArrowsAltV size={24} />
+                </button>
             </div>
         );
     };

@@ -39,13 +39,3 @@
 .custom-scrollbar-x:hover::-webkit-scrollbar-thumb {
     background-color: #FF9B71;
 }
-
-
-.extend {
-    resize: vertical;
-    overflow: auto;
-    min-height: 20%;
-    max-height: 80%;
-    border-bottom: 6px double #a5dee4;
-    background-color: #f0f0f0;
-}
