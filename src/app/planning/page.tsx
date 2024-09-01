@@ -566,10 +566,10 @@ const PlanPage: React.FC = () => {
                 </div>
                 
                 {/* RWD時改為地圖icon */}
-                <div className="fixed flex flex-col lg:hidden bottom-[140px] right-5 space-y-2 z-10 opacity-80">
+                <div className="fixed flex flex-col lg:hidden bottom-[180px] right-5 space-y-2 z-10 opacity-80">
                     <button
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
-                        className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 active:scale-95 active:shadow-inner"
+                        className="bg-custom-kame text-white p-3 rounded-full shadow-lg active:scale-95 active:shadow-inner"
                     >
                         <FaMapMarkedAlt size={24} />
                     </button>
@@ -791,7 +791,7 @@ const PlanPage: React.FC = () => {
                     
                     <button
                             onClick={handleSaveItineraries}
-                            className={`z-50 fixed bottom-[80px] right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
+                            className={`z-50 fixed bottom-[60px] right-5 opacity-80 bg-${hasUnsavedChanges ? 'custom-atomic-tangerine' : 'custom-kame'} text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-100 hover:scale-125 transition-colors active:scale-95 active:shadow-inner ${hasUnsavedChanges ? 'animate-bounce' : ''}`}
                         >
                             <div className="relative flex items-center active:scale-95 active:shadow-inner">
                                 <FaRegSave
@@ -812,7 +812,7 @@ const PlanPage: React.FC = () => {
             {/* 切換上下區塊高度變化按鈕 */}
             <button
                 onClick={toggleLayout}
-                className={`fixed block lg:hidden bottom-[200px] right-5 bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg opacity-80 hover:bg-custom-atomic-tangerine hover:opacity-100 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
+                className={`fixed block lg:hidden bottom-[120px] right-5 bg-custom-kame text-white p-3 rounded-full shadow-lg opacity-80 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
             >
                 <FaArrowsAltV size={24} />
             </button>
