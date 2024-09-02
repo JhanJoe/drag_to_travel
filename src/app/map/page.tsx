@@ -190,7 +190,7 @@ const MapPage: React.FC = () => {
     return (
             <div className="flex-col lg:flex-row flex h-screen">
 
-                <div className={`w-full lg:w-1/3 order-2 lg:order-1  h-${topDivLarger ? '1/3' : '2/3'}   lg:h-full  p-3 overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
+                <div className={`w-full lg:w-1/3 order-2 lg:order-1  ${topDivLarger ? "h-[33.33%]" : "h-[66.67%]"} lg:h-full  p-3 overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
                     <div className="mt-5 mb-3 mx-6 lg:mx-2 hidden flex lg:flex">
                         <div
                             onMouseEnter={() => setHovered(false)}
@@ -283,7 +283,7 @@ const MapPage: React.FC = () => {
                 </div>
 
                 {/* 右半部：地圖 */}
-                <div className={`relative w-full lg:w-2/3 h-${topDivLarger ? "2/3" : "1/3"} lg:h-full  order-1 lg:order-2 transition-all duration-500 ease-in-out`}>
+                <div className={`relative w-full lg:w-2/3 ${topDivLarger ? "h-[66.67%]" : "h-[33.33%]"} lg:h-full  order-1 lg:order-2 transition-all duration-500 ease-in-out`}>
                     <GoogleMapComponent
                             markerPosition={markerPosition}
                             setMarkerPosition={setMarkerPosition}
