@@ -17,6 +17,8 @@ import { MdExpandMore } from "react-icons/md";
 import Image from 'next/image';
 import { FaArrowsAltV } from "react-icons/fa";
 import { FaShareSquare } from "react-icons/fa";
+import NotificationModal from "../components/NotificationModal";
+import { FaRegQuestionCircle } from "react-icons/fa";
 
 
 type TransportMode = 'DRIVING' | 'WALKING' | 'TRANSIT';
@@ -57,6 +59,7 @@ const PlanPage: React.FC = () => {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); //紀錄是否有未儲存的更改
     const [topDivLarger, setTopDivLarger] = useState(true); // 切換上下佈局比例
     const [hasPermission, setHasPermission] = useState<boolean | null>(null); // 檢查是否為owner
+    const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
     
 
@@ -316,6 +319,10 @@ const PlanPage: React.FC = () => {
         // 來源列表與目標列表
         let sourceList: (Place | ItineraryPlace)[] | undefined;
 
+        console.log('sourceList:', sourceList); //TODO
+        console.log('source.index:', source.index); //TODO
+        console.log('source.droppableId:', source.droppableId); //TODO
+
         if (source.droppableId in itineraries) {
             sourceList = itineraries[source.droppableId];
         } else {
@@ -542,7 +549,7 @@ const PlanPage: React.FC = () => {
                 itineraryPlace.id.includes(place.id)
             )
         );
-    console.log(`Place ${place.id} is in itinerary: `, result); //TODO
+    // console.log(`Place ${place.id} is in itinerary: `, result); //TODO
     return result;
     };
 
@@ -550,6 +557,13 @@ const PlanPage: React.FC = () => {
     const toggleLayout = () => {
         setTopDivLarger((prev) => !prev);
     };
+
+    const helpImages = [
+        "/images/planning-help-1.png",
+        "/images/planning-help-2.png",
+        "/images/planning-help-3.png",
+        "/images/planning-help-4.png"
+    ];
 
     if (loading) {
         return <div className="ml-3 mt-7">Loading...</div>;
@@ -611,7 +625,7 @@ const PlanPage: React.FC = () => {
                 </div>
                 
                 {/* RWD時改為地圖icon */}
-                <div className="fixed flex flex-col lg:hidden bottom-[180px] right-5 space-y-2 z-10 opacity-80">
+                <div className="fixed flex flex-col lg:hidden bottom-[240px] right-5 space-y-2 z-10 opacity-80">
                     <button
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
                         className="bg-custom-kame text-white p-3 rounded-full shadow-lg active:scale-95 active:shadow-inner"
@@ -626,7 +640,7 @@ const PlanPage: React.FC = () => {
                     </button> */}
                 </div>
 
-                <div className="fixed flex flex-col lg:hidden bottom-[240px] right-5 space-y-2 z-10 opacity-80">
+                <div className="fixed flex flex-col lg:hidden bottom-[300px] right-5 space-y-2 z-10 opacity-80">
                     <button
                         onClick={() => router.push(`/sharing?tripId=${tripId}`)}
                         className="bg-custom-kame text-white p-3 rounded-full shadow-lg active:scale-95 active:shadow-inner"
@@ -729,7 +743,7 @@ const PlanPage: React.FC = () => {
                     {/* 行程規劃 */}
                     <div className="relative  flex flex-col lg:flex-grow  w-[55%] sm:w-[66.67%] lg:w-[75%] overflow-auto transition-all duration-1000 ease-out">
                         <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mt-4 lg:mt-7  mb-2 h-full overflow-y-auto custom-scrollbar-y">
-                            <div className="flex flex-row align-top h-full ml-3">
+                            <div className="flex flex-row align-top h-full mx-2">
                                 {tripDateRange.map((date) => {
                                     const dateKey = date.toISOString().split('T')[0];
                                     const tasksForDate = itineraries[dateKey] || [];
@@ -740,7 +754,7 @@ const PlanPage: React.FC = () => {
                                                 <div
                                                     ref={provided.innerRef}
                                                     {...provided.droppableProps}
-                                                    className="flex flex-col w-[180px] sm:w-[270px] p-2 mr-4 border rounded-xl bg-white min-h-[1000px] h-fit transition-all duration-1000 ease-out"
+                                                    className="flex flex-col w-[180px] sm:w-[270px] p-2 mr-3 border rounded-xl bg-white min-h-[1000px] h-fit transition-all duration-1000 ease-out"
                                                 >
                                                     <div className="text-center font-bold">
                                                         {date.toLocaleDateString('zh-TW', {
@@ -875,10 +889,39 @@ const PlanPage: React.FC = () => {
             {/* 切換上下區塊高度變化按鈕 */}
             <button
                 onClick={toggleLayout}
-                className={`fixed block lg:hidden bottom-[120px] right-5 bg-custom-kame text-white p-3 rounded-full shadow-lg opacity-80 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
+                className={`fixed block lg:hidden bottom-[180px] right-5 bg-custom-kame text-white p-3 rounded-full shadow-lg opacity-80 transition-all duration-500 z-30 active:scale-95 active:shadow-inner`}
             >
                 <FaArrowsAltV size={24} />
             </button>
+
+            {/* 使用說明按鈕 */}
+            <button
+                    onClick={() => setIsHelpModalOpen(true)}
+                    className={`fixed block w-12 h-12 bottom-[120px] lg:bottom-[120px] right-5 bg-custom-kame text-white lg:bg-custom-atomic-tangerine p-3 rounded-full shadow-lg opacity-80 transition-all duration-500 z-30 active:scale-95 active:shadow-inner hover:scale-110`}
+                >
+                    <FaRegQuestionCircle size={24} className="animate-pulse" />
+                </button>
+
+                {/* 使用說明 */}
+                <NotificationModal
+                    isOpen={isHelpModalOpen}
+                    onClose={() => setIsHelpModalOpen(false)}
+                    message={
+                        <div className="grid grid-cols-2 gap-6">
+                            {helpImages.map((src, index) => (
+                                <div key={index} className="flex flex-col items-center">
+                                    <Image 
+                                        src={src} 
+                                        alt={`使用說明 ${index + 1}`} 
+                                        width={200} 
+                                        height={200} 
+                                        className="object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    }
+                />
     </div>
     );
 };

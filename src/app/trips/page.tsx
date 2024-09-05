@@ -27,6 +27,7 @@ const TripsPage: React.FC = () => {
         try {
             console.log("執行fetchtrip函式"); //TODO 待刪
 
+            startLoading("正在載入資料...");
             const tripsCollection = collection(db, "trips");
             const q = query(tripsCollection, where("userId", "==", userId));
             const tripsSnapshot = await getDocs(q);
@@ -50,7 +51,7 @@ const TripsPage: React.FC = () => {
         const isLoadingFromLogin = localStorage.getItem('isLoading') === 'true';
             if (isLoadingFromLogin) {
                 console.log("開始執行trippage-startloading");  //TODO 待刪
-                startLoading("載入行程資料中...");
+                startLoading("正在載入資料...");
 
                 console.log("trippage-移除localstorage中的isLoading");  //TODO 待刪
                 localStorage.removeItem('isLoading');

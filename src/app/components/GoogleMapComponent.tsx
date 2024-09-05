@@ -193,7 +193,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 >
                     <input
                         type="text"
-                        placeholder="輸入名稱，開始搜尋及儲存"
+                        placeholder="輸入名稱，開始搜尋景點"
                         className="fixed  text-sm sm:text-base top-[50px] sm:top-[66px] left-[3%] lg:left-[35%] z-10 p-1 lg:p-2 border rounded w-[40%] min-w-[230px] "
                         value={searchValue}
                         onChange={(e) => setSearchValue(e.target.value)}
@@ -255,6 +255,9 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                                 </a>
                                             )}
                                             </div>
+                                            {selectedPlace.formatted_address && (
+                                                <div className="text-xs sm:text-sm">{selectedPlace.formatted_address}</div>
+                                            )}
                                             <div className="flex items-center">
                                                 <FaStar className="text-yellow-500 mr-1" />
                                                 <p>{selectedPlace.rating ? `評分: ${selectedPlace.rating}/5 (${selectedPlace.user_ratings_total} 評論)` : ''}</p>
