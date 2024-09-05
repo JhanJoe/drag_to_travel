@@ -11,6 +11,8 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [notes, setNotes] = useState("");
+    const [startDateError, setStartDateError] = useState("");
+    const [endDateError, setEndDateError] = useState("");
 
     useEffect(() => {
         if (trip) {
@@ -26,7 +28,36 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
         }
     }, [trip]);
 
-    const handleSubmit = () => {
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault(); 
+
+        let hasError = false;
+        
+        if (!startDate) {
+            setStartDateError("開始日期必須填寫");
+            hasError = true;
+        } else {
+            setStartDateError("");
+        }
+
+        if (!endDate) {
+            setEndDateError("結束日期必須填寫");
+            hasError = true;
+        } else {
+            setEndDateError("");
+        }
+
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            if (end <= start) {
+                setEndDateError("結束日期應比開始日期晚");
+                hasError = true;
+            }
+        }
+
+        if (hasError) return;
+
         const newTrip = {
             ...(trip?.id ? { id: trip.id } : {}),
             name,
@@ -50,16 +81,24 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             />
             <input
             type="date"
-            className="mb-4 p-2 border rounded w-full"
+            className={`${startDateError ? 'mb-1' : 'mb-4'} p-2 border rounded w-full`}
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
+            required
             />
+
+            {startDateError && <p className="text-custom-atomic-tangerine text-sm mb-3 transition-all duration-1000 ease-out">{startDateError}</p>}
+
             <input
             type="date"
-            className="mb-4 p-2 border rounded w-full"
+            className={`${endDateError ? 'mb-1' : 'mb-4'} p-2 border rounded w-full`}
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
+            required
             />
+
+            {endDateError && <p className="text-custom-atomic-tangerine text-sm mb-3 transition-all duration-1000 ease-out">{endDateError}</p>}
+
             <input
             type="text"
             placeholder="備註"
@@ -69,13 +108,13 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             />
             <button
             onClick={handleSubmit}
-            className="bg-custom-reseda-green text-white p-2 rounded w-full"
+            className="bg-custom-kame text-gray-600 p-2 rounded w-full active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-105 transform "
             >
             儲存
             </button>
             <button
             onClick={onClose}
-            className="mt-4 w-full"
+            className="mt-4 w-full active:shadow-inner transition-all duration-300 ease-on-out hover:scale-110 transform"
             >
             取消
             </button>

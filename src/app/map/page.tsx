@@ -13,9 +13,13 @@ import { useLoading } from "../contexts/LoadingContext";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { TbDragDrop } from "react-icons/tb";
 import { FaArrowsAltV } from "react-icons/fa";
+// import { FaShareSquare } from "react-icons/fa"; //TODO 還沒做分享的icon button（要不要做？）
+import { FaRegQuestionCircle } from "react-icons/fa";
+import NotificationModal from "../components/NotificationModal";
+import Image from 'next/image';
 
 const MapPage: React.FC = () => {  
-    const { user } = useAuth();
+    const { user, checkTripPermission } = useAuth();
     const { trip, placeLists, setPlaceLists, fetchTripAndPlaceLists, tripDataLoading, setTrip, updatePlaceLists, addPlaceToList, removePlaceFromList } = useTripContext();
     const { startLoading, stopLoading } = useLoading();  //loading動畫
     const [newPlaceListTitle, setNewPlaceListTitle] = useState("");
@@ -25,11 +29,14 @@ const MapPage: React.FC = () => {
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
     const [tripId, setTripId] = useState<string | null>(null);
-    const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
+    // const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
+    const [hovered, setHovered] = useState('map'); //地圖/規劃/分享切換之hover效果
     const tripDataLoadingRef = useRef(false); // 使用 useRef 來跟踪 tripDataLoading 狀態
     const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
     const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null);
-    const [topDivLarger, setTopDivLarger] = useState(true); // 切換上下佈局比例
+    const [topDivLarger, setTopDivLarger] = useState(false); // 切換上下佈局比例
+    const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+    const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -39,23 +46,41 @@ const MapPage: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {   
-        if (user && tripId && !tripDataLoadingRef.current) {
-                tripDataLoadingRef.current = true;  // flag。用來追蹤是否已經在進行資料載入，true表示資料加載中，就不會再發起新的fetch
-                console.log("map/page 開始載入loading動畫") //TODO 待刪
-                startLoading("正在載入資料..."); //loading動畫開始
-                setTrip(null);
-                setPlaceLists([]);
-                fetchTripAndPlaceLists(user.uid, tripId)
-                .finally(() => {
-                    console.log("map/page 結束loading動畫") //TODO 待刪
-                    stopLoading();  // 停止loading動畫
+    useEffect(() => {
+        const checkPermissionAndLoadData = async () => {
+            if (user && tripId && !tripDataLoadingRef.current) {
+                tripDataLoadingRef.current = true;
+                startLoading("正在檢查權限...");
+                
+                try {
+                    const permission = await checkTripPermission(tripId);
+                    if (permission) {
+                        setHasPermission(true);
+                        startLoading("正在載入資料...");
+                        setTrip(null);
+                        setPlaceLists([]);
+                        await fetchTripAndPlaceLists(user.uid, tripId);
+                    } else {
+                        setHasPermission(false);
+                        stopLoading();
+                        setTimeout(() => router.push('/'), 1500);
+                    }
+                } catch (error) {
+                    console.error("Error checking permission or loading data:", error);
+                    setHasPermission(false);
+                    stopLoading();
+                    setTimeout(() => router.push('/'), 1500);
+                } finally {
+                    stopLoading();
                     setTimeout(() => {
-                        tripDataLoadingRef.current = false; // 要改為false，這樣有下次useEffect時才會重新fetch資料。(如果前後都不加ref，loading動畫不會顯示)
-                    }, 500);  // 加一個延遲，確保UI狀態更新（不加延遲loading動畫不會停, 還會重複fetch）
-                });
-        }
-    }, [user, tripId, fetchTripAndPlaceLists, startLoading, stopLoading, setTrip, setPlaceLists]);
+                        tripDataLoadingRef.current = false;
+                    }, 500);
+                }
+            }
+        };
+
+        checkPermissionAndLoadData();
+    }, [user, tripId, router, fetchTripAndPlaceLists, startLoading, stopLoading, setTrip, setPlaceLists, checkTripPermission]);
 
     const handleAddPlaceList = async () => {
         if (newPlaceListTitle.trim() !== "" && tripId && user) {
@@ -176,6 +201,16 @@ const MapPage: React.FC = () => {
             mapInstance.panTo(position);
             mapInstance.setZoom(15); 
         }
+
+        // RWD時，地圖center往position上方一點偏移(以讓infowindow顯示完整一點)
+        if (window.innerWidth <= 640) {
+            setTimeout(() => {
+                if (mapInstance) {
+                const offset = mapInstance.getDiv().clientHeight * 0.05;  
+                mapInstance.panBy(0, -offset);
+                }
+            }, 300);  
+        }
     };
 
     // RWD時切換上下區塊比例
@@ -183,31 +218,61 @@ const MapPage: React.FC = () => {
         setTopDivLarger((prev) => !prev);
     };
 
+    const helpImages = [
+        "/images/map-help-1.png",
+        "/images/map-help-2.png",
+        "/images/map-help-3.png",
+        "/images/map-help-4.png"
+    ];
+
     if (!tripId || !user) {
-        return <div>Loading...</div>;
+        return <div className="ml-3 mt-7">Loading...</div>;
+    }
+
+    if (hasPermission === null) {
+        return <div className="ml-3 mt-7">正在檢查權限...</div>;
+    }
+
+    if (hasPermission === false) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-100">
+                <div className="text-center p-8 bg-white rounded-lg shadow-md">
+                    <h1 className="text-2xl font-bold text-red-600 mb-4">無權限讀取</h1>
+                    <p className="text-gray-600">您沒有權限編輯此行程。正在返回首頁...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
             <div className="flex-col lg:flex-row flex h-screen">
 
                 <div className={`w-full lg:w-1/3 order-2 lg:order-1  ${topDivLarger ? "h-[33.33%]" : "h-[66.67%]"} lg:h-full  p-3 overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
-                    <div className="mt-5 mb-3 mx-6 lg:mx-2 hidden flex lg:flex">
+                    <div className="mt-4 mb-3 mx-4 lg:mx-0 hidden flex lg:flex" onMouseLeave={() => setHovered('map')}>
                         <div
-                            onMouseEnter={() => setHovered(false)}
+                            onMouseEnter={() => setHovered('map')}
                             onClick={() => router.push(`/map?tripId=${tripId}`)}
-                            className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                            ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                            className={`w-1/3 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                            ${hovered === 'map' ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                         >
-                            地圖頁面
+                            搜尋景點
                         </div>
                         <div
-                            onMouseEnter={() => setHovered(true)}
+                            onMouseEnter={() => setHovered('planning')}
                             onClick={() => router.push(`/planning?tripId=${tripId}`)}
-                            className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                            ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                            className={`w-1/3 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                            ${hovered === 'planning' ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} hover:bg-custom-atomic-tangerine hover:text-white`}
                         >
-                            規劃頁面
+                            規劃行程
                         </div>
+                        <div
+                        onMouseEnter={() => setHovered('sharing')}
+                        onClick={() => router.push(`/sharing?tripId=${tripId}`)}
+                        className={`w-1/3 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                        ${hovered === 'sharing' ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                    >
+                        分享行程
+                    </div>
                     </div>
 
                     {/* RWD時，換成規劃的icon按鈕 */}
@@ -226,64 +291,71 @@ const MapPage: React.FC = () => {
                         </button>
                     </div>
 
-                    {trip && (
-                        <div className="mx-6 lg:mx-0 mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center">
-                            <div className="texl-xl md:text-2xl font-bold transition-all duration-1000 ease-out">{trip.name}</div>
-                            <div className="text-xs md:text-base">{`${trip.startDate} ~ ${trip.endDate}`}</div>
-                            <div className="text-gray-500 text-xs md:text-base">{trip.notes}</div>
-                        </div>
-                    )}
-                    <h2 className="textl-lg md:text-xl font-bold mb-2 text-center">景點列表</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 transition-all duration-1000 ease-out px-6 lg:px-0">
-                        {placeLists.map((placeList) => (
-                            <PlaceListCard
-                                key={placeList.id}
-                                placeList={placeList}
-                                onDelete={handleDeletePlaceList}
-                                onUpdate={handleUpdatePlaceList}
-                                onDeletePlace={handleDeletePlace}
-                                onPlaceClick={handlePlaceClick}
-                            >
-                                <div className="flex justify-center">
-                                    <button
-                                        onClick={() => handleAddToPlaceList(placeList.id)}
-                                        className="mt-2 p-1 bg-custom-kame text-gray-600 rounded text-sm active:scale-95 active:shadow-inner"
-                                    >
-                                        將景點加入此列表
-                                    </button>
+                    <div className="container mx-auto flex flex-col">
+                        <div className="order-2 lg:order-1">
+                            {trip && (
+                                <div className="mx-6 lg:mx-0 mb-2 sm:mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center">
+                                    <div className="texl-xl md:text-2xl font-bold transition-all duration-1000 ease-out">{trip.name}</div>
+                                    <div className="text-xs md:text-base">{`${trip.startDate} ~ ${trip.endDate}`}</div>
+                                    <div className="text-gray-500 text-xs md:text-base">{trip.notes}</div>
                                 </div>
-                            </PlaceListCard>
-                        ))}
-                        
-                    <div className="relative mb-3 p-3 border rounded-xl bg-white overflow-hidden max-h-[250px] flex flex-col">
-                        <input
-                                type="text"
-                                value={newPlaceListTitle}
-                                onChange={(e) => setNewPlaceListTitle(e.target.value)}
-                                placeholder="新增景點列表標題"
-                                className="w-full mb-2 p-2 border rounded"
-                            />
-                            <textarea
-                                value={newPlaceListNotes}
-                                onChange={(e) => setNewPlaceListNotes(e.target.value)}
-                                placeholder="景點列表的備註"
-                                className="w-full mb-2 p-2 border rounded"
-                            />
-                            <div className="flex justify-center">
-                                <button
-                                    onClick={handleAddPlaceList}
-                                    className="w-[120px] p-1 text-sm bg-custom-kame text-gray-600 rounded active:scale-95 active:shadow-inner"
-                                >
-                                    新增景點列表
-                                </button>
+                            )}
+                        </div>
+
+                        <div className="order-1 lg:order-2">
+                            <h2 className="textl-lg md:text-xl font-bold mb-1 sm:mb-2 text-center">景點暫存清單</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 transition-all duration-1000 ease-out px-6 lg:px-0">
+                                {placeLists.map((placeList) => (
+                                    <PlaceListCard
+                                        key={placeList.id}
+                                        placeList={placeList}
+                                        onDelete={handleDeletePlaceList}
+                                        onUpdate={handleUpdatePlaceList}
+                                        onDeletePlace={handleDeletePlace}
+                                        onPlaceClick={handlePlaceClick}
+                                    >
+                                        <div className="flex justify-center">
+                                            <button
+                                                onClick={() => handleAddToPlaceList(placeList.id)}
+                                                className="mt-2 p-1 bg-custom-kame text-gray-600 rounded text-sm active:scale-95 active:shadow-inner"
+                                            >
+                                                將景點加入此清單
+                                            </button>
+                                        </div>
+                                    </PlaceListCard>
+                                ))}
+                                
+                            <div className="relative mb-2 sm:mb-3 p-3 border rounded-xl bg-white overflow-hidden max-h-[250px] flex flex-col">
+                                <input
+                                        type="text"
+                                        value={newPlaceListTitle}
+                                        onChange={(e) => setNewPlaceListTitle(e.target.value)}
+                                        placeholder="先新增清單存放景點"
+                                        className="text-sm sm:text-base w-full mb-2 p-1 border-b-2"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={newPlaceListNotes}
+                                        onChange={(e) => setNewPlaceListNotes(e.target.value)}
+                                        placeholder="清單備註"
+                                        className="text-sm w-full mb-2 p-1 border-b-2"
+                                    />
+                                    <div className="flex justify-center">
+                                        <button
+                                            onClick={handleAddPlaceList}
+                                            className="w-[120px] p-1 text-sm bg-custom-kame text-gray-600 rounded active:scale-95 active:shadow-inner"
+                                        >
+                                            新增景點暫存清單
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
 
                 {/* 右半部：地圖 */}
-                <div className={`relative w-full lg:w-2/3 ${topDivLarger ? "h-[66.67%]" : "h-[33.33%]"} lg:h-full  order-1 lg:order-2 transition-all duration-500 ease-in-out`}>
+                <div className={`relative w-full lg:w-[66.67%] ${topDivLarger ? "h-[66.67%]" : "h-[33.33%]"} lg:h-full  order-1 lg:order-2 transition-all duration-500 ease-in-out`}>
                     <GoogleMapComponent
                             markerPosition={markerPosition}
                             setMarkerPosition={setMarkerPosition}
@@ -307,6 +379,35 @@ const MapPage: React.FC = () => {
                 >
                     <FaArrowsAltV size={24} />
                 </button>
+
+                {/* 使用說明按鈕 */}
+                <button
+                    onClick={() => setIsHelpModalOpen(true)}
+                    className={`fixed block w-12 h-12 bottom-[60px] lg:top-[65px] right-5 bg-custom-kame text-white lg:bg-custom-atomic-tangerine p-3 rounded-full shadow-lg opacity-80 transition-all duration-500 z-30 active:scale-95 active:shadow-inner hover:scale-110`}
+                >
+                    <FaRegQuestionCircle size={24} className="animate-pulse" />
+                </button>
+
+                {/* 使用說明 */}
+                <NotificationModal
+                    isOpen={isHelpModalOpen}
+                    onClose={() => setIsHelpModalOpen(false)}
+                    message={
+                        <div className="grid grid-cols-2 gap-6">
+                            {helpImages.map((src, index) => (
+                                <div key={index} className="flex flex-col items-center">
+                                    <Image 
+                                        src={src} 
+                                        alt={`使用說明 ${index + 1}`} 
+                                        width={200} 
+                                        height={200} 
+                                        className="object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    }
+                />
             </div>
         );
     };

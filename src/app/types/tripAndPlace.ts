@@ -5,6 +5,9 @@ export interface Trip {
     endDate: string;
     notes: string;
     userId: string;
+    share?: boolean;
+    public?: boolean;
+    userEmail?: string;
 }
 
 export interface PlaceList {

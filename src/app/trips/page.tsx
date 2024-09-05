@@ -18,6 +18,7 @@ const TripsPage: React.FC = () => {
     const { user, loading } = useAuth();
     const { startLoading, stopLoading } = useLoading();
     const hasFetchedRef = useRef(false); //使用 useRef 來追蹤是否已經執行過 fetch
+    const [isSaving, setIsSaving] = useState(false); // 用來紀錄是否正在儲存新的trip
 
     const fetchTrips = useCallback(async (userId: string) => {
         if (hasFetchedRef.current) return;
@@ -86,47 +87,67 @@ const TripsPage: React.FC = () => {
     };
 
     const handleSaveTrip = async (trip: Trip) => {
+        if (isSaving) return; // 防止重複儲存
+
+        setIsSaving(true);
+
         if (!user) {
             console.error("尚未登入");
             return;
         }
 
-        if (trip.id) {
-            // 更新已經有的行程
-            const tripRef = doc(db, "trips", trip.id);
-            const updatedTrip = {
-                name: trip.name,
-                startDate: trip.startDate,
-                endDate: trip.endDate,
-                notes: trip.notes,
-                userId: user.uid,
-            };
-            await updateDoc(tripRef, updatedTrip);
-            setTrips((prevTrips) => {
-                const updatedTrips = prevTrips.map((t) => (t.id === trip.id ? trip : t));
-                return updatedTrips.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-            });
-            } else {
-                // 新增行程
-                const newTrip = { ...trip, userId: user.uid };
-                await handleAddTrip(newTrip);
-            }
-            setShowModal(false);
+        try {
+            if (trip.id) {
+                // 更新已經有的行程
+                const tripRef = doc(db, "trips", trip.id);
+
+                const updatedTrip = {
+                    name: trip.name,
+                    startDate: trip.startDate,
+                    endDate: trip.endDate,
+                    notes: trip.notes,
+                    userId: user.uid,
+                    userEmail: user.email
+                };
+
+                await updateDoc(tripRef, updatedTrip);
+                setTrips((prevTrips) => {
+                    const updatedTrips = prevTrips.map((t) => (t.id === trip.id ? trip : t));
+                    return updatedTrips.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+                });
+
+                } else {
+                    // 新增行程
+                    const newTrip = { 
+                        ...trip, 
+                        userId: user.uid,
+                        share: false,  
+                        public: false,  
+                        userEmail: user.email
+                    };
+                    await handleAddTrip(newTrip);
+                }
+                setShowModal(false);
+        } catch (error) {
+            console.error("Error saving trip: ", error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
-        <div className="p-4">
+        <div className="mt-3 p-3">
             <div
-                className="border-2 shadow-md p-4 mb-4 cursor-pointer text-center rounded-md text-gray-400 hover:text-custom-atomic-tangerine "
+                className="border-2 shadow-md p-3 mb-3 cursor-pointer text-center rounded-md text-gray-400 hover:text-custom-atomic-tangerine"
                 onClick={() => {
                 setCurrentTrip(null);
                 setShowModal(true);
                 }}
             >
                 <div className="text-center text-4xl">+</div>
-                <div className="text-center">請新增行程來開始後續規劃</div>
+                <div className="text-center text-xl">請新增行程來開始後續規劃</div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {trips.map(trip => (
                 <TripCard key={trip.id} trip={trip} onDelete={handleDeleteTrip} onEdit={handleEditTrip} />
                 ))}

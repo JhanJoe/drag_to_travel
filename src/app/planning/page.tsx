@@ -4,18 +4,19 @@ import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useTripContext } from "../contexts/TripContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Trip, Place, PlaceList, Itinerary, ItineraryPlace } from '../types/tripAndPlace';
+import { Trip, Place, PlaceList, Itinerary, ItineraryPlace, } from '../types/tripAndPlace';
 import { useLoading } from "../contexts/LoadingContext";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import GoogleMapComponent from "../components/GoogleMapComponent";
-import { FaStar } from "react-icons/fa";
+// import { FaStar } from "react-icons/fa";
 import { db } from "../../../firebase-config";
 import { setDoc, updateDoc, doc, getDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { FaRegSave, FaMapMarkedAlt } from "react-icons/fa";
-import { TbDragDrop } from "react-icons/tb";
+// import { TbDragDrop } from "react-icons/tb";
 import { MdExpandMore } from "react-icons/md";
 import Image from 'next/image';
 import { FaArrowsAltV } from "react-icons/fa";
+import { FaShareSquare } from "react-icons/fa";
 
 
 type TransportMode = 'DRIVING' | 'WALKING' | 'TRANSIT';
@@ -32,12 +33,12 @@ interface RouteInfo {
 }
 
 const PlanPage: React.FC = () => {  
-    const { user, loading } = useAuth();
+    const { user, loading, checkTripPermission  } = useAuth();
     const { trip, placeLists, fetchTripAndPlaceLists } = useTripContext();
     const { startLoading, stopLoading } = useLoading(); //loading動畫
     const [isSaving, setIsSaving] = useState(false); //儲存資料的loading動畫
     const [tripId, setTripId] = useState<string | null>(null);
-    const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
+    const [hovered, setHovered] = useState('planning'); //地圖/規劃/分享切換之hover效果
     const [itineraries, setItineraries] = useState<Record<string, (Place | ItineraryPlace)[]>>({}); //行程
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null);
     const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -55,6 +56,7 @@ const PlanPage: React.FC = () => {
     });
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); //紀錄是否有未儲存的更改
     const [topDivLarger, setTopDivLarger] = useState(true); // 切換上下佈局比例
+    const [hasPermission, setHasPermission] = useState<boolean | null>(null); // 檢查是否為owner
 
     
 
@@ -70,10 +72,20 @@ const PlanPage: React.FC = () => {
         const fetchAllData = async () => {
             if (tripId && user && !tripDataLoadingRef.current && !isSaving) {
                 tripDataLoadingRef.current = true;
-                console.log("PlanPage: 開始載入loading動畫");
-                startLoading("正在載入資料...");
+                startLoading("正在檢查權限並載入資料...");
 
                 try {
+                    // 先檢查user是否為owner
+                    const permission = await checkTripPermission(tripId);
+                    setHasPermission(permission);
+
+                    if (!permission) {
+                        console.log("無權限存取此行程");
+                        setTimeout(() => router.push('/'), 1500);
+                        return; 
+                    }
+
+                    // 如果是owner，繼續fetch資料
                     await fetchTripAndPlaceLists(user.uid, tripId);
 
                     const itinerariesRef = collection(db, "itineraries");
@@ -115,9 +127,10 @@ const PlanPage: React.FC = () => {
                     }
 
                 } catch (error) {
-                    console.error("Error fetching data:", error);
+                    console.error("Error checking permission or fetching data:", error);
+                    setHasPermission(false);
+                    setTimeout(() => router.push('/'), 1500);
                 } finally {
-                    console.log("PlanPage: 結束loading動畫");
                     stopLoading();
                     setTimeout(() => {
                         tripDataLoadingRef.current = false;
@@ -127,8 +140,7 @@ const PlanPage: React.FC = () => {
         };
 
         fetchAllData();
-    }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading, isSaving]);    
-
+    }, [tripId, user, fetchTripAndPlaceLists, startLoading, stopLoading, isSaving, router, checkTripPermission]);
     
     const generateDateRange = (startDate: string, endDate: string) => {
         const start = new Date(startDate);
@@ -332,7 +344,7 @@ const PlanPage: React.FC = () => {
         ? movedItem // 如果包含"-"，則不複製
         : {
             ...movedItem,
-            id: `${movedItem.id}-${Date.now()}`,  // 以-現在時間做後綴生成一個新的ID來作為draggable的ID
+            id: `${movedItem.id}-${Date.now()}`,  // 以-現在時間 做後綴生成一個新的ID來作為draggable的ID
             originalPlaceId: movedItem.id,
             title: movedItem.title,
             address: movedItem.address,
@@ -410,6 +422,16 @@ const PlanPage: React.FC = () => {
             mapInstance.panTo(position);
             // mapInstance.setZoom(15); 
         }
+
+        // RWD時，地圖center往position上方一點偏移(以讓infowindow顯示完整一點)
+        if (window.innerWidth <= 640) {
+            setTimeout(() => {
+                if (mapInstance) {
+                const offset = mapInstance.getDiv().clientHeight * 0.05;  
+                mapInstance.panBy(0, -offset);
+                }
+            }, 300);  
+        }
     };
 
 
@@ -462,8 +484,8 @@ const PlanPage: React.FC = () => {
                 share:false,
                 public:false,
                 places: places.map((place, index) => removeUndefined({
-                    id: `${place.id}`,  // 使用 place.id-date.now 作為存進 ItineraryPlace 的 id（例如O4e3SQTNqXIYmrDeRyVM-xxxxxxx）
-                    originalPlaceId: place.id.split("-")[0],  // 使用原始的 place.id 作為 originalPlaceId（例如O4e3SQTNqXIYmrDeRyVM）
+                    id: `${place.id}`,  // 使用 place.id-現在時間 作為存進 ItineraryPlace 的 id
+                    originalPlaceId: place.id.split("-")[0],  // 使用原始的 place.id 作為 originalPlaceId
                     title: place.title,
                     address: place.address,
                     latitude: place.latitude,
@@ -530,7 +552,7 @@ const PlanPage: React.FC = () => {
     };
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div className="ml-3 mt-7">Loading...</div>;
     }
 
     if (!user) {
@@ -539,29 +561,52 @@ const PlanPage: React.FC = () => {
     }
 
     if (!tripId) {
-        return <div>No trip selected. Please select a trip first.</div>;
+        return <div>請先選擇行程</div>;
+    }
+
+    if (hasPermission === null) {
+        return <div className="ml-3 mt-7">正在檢查權限...</div>;
+    }
+
+    if (hasPermission === false) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-100">
+                <div className="text-center p-8 bg-white rounded-lg shadow-md">
+                    <h1 className="text-2xl font-bold text-red-600 mb-4">無權限讀取</h1>
+                    <p className="text-gray-600">您沒有權限編輯此行程。正在返回首頁...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
         <div className="flex h-screen flex-col-reverse lg:flex-row">
             {/* 左半部的區塊 (地圖 & 行程名稱?) */}
-            <div className={`w-full lg:w-4/12  order-2 lg:order-1  ${topDivLarger ? "h-[33.33%]" : "h-[10%]"} lg:h-full  overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
-                <div className="mt-4 mb-3 mx-3 hidden lg:flex">
+            <div className={`w-full lg:w-[33.33%]  order-2 lg:order-1  ${topDivLarger ? "h-[33.33%]" : "h-[10%]"} lg:h-full  overflow-y-auto custom-scrollbar-y bg-gray-100 transition-all duration-500 ease-in-out`}>
+                <div className="mt-7 mb-3 mx-3 hidden lg:flex" onMouseLeave={() => setHovered('planning')}>
                     <div
-                        onMouseEnter={() => setHovered(true)}
+                        onMouseEnter={() => setHovered('map')}
                         onClick={() => router.push(`/map?tripId=${tripId}`)}
-                        className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                        ${hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                        className={`w-1/3 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                        ${hovered === 'map' ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-l-xl hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
-                        地圖頁面
+                        搜尋景點
                     </div>
                     <div
-                        onMouseEnter={() => setHovered(false)}
+                        onMouseEnter={() => setHovered('planning')}
                         onClick={() => router.push(`/planning?tripId=${tripId}`)}
-                        className={`w-1/2 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
-                        ${!hovered ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                        className={`w-1/3 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                        ${hovered === 'planning' ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} hover:bg-custom-atomic-tangerine hover:text-white`}
                     >
-                        規劃頁面
+                        規劃行程
+                    </div>
+                    <div
+                        onMouseEnter={() => setHovered('sharing')}
+                        onClick={() => router.push(`/sharing?tripId=${tripId}`)}
+                        className={`w-1/3 text-center px-4 py-2 cursor-pointer transition-colors duration-300 
+                        ${hovered === 'sharing' ? 'bg-custom-atomic-tangerine text-white' : 'bg-gray-200 text-gray-700'} rounded-r-xl hover:bg-custom-atomic-tangerine hover:text-white`}
+                    >
+                        分享行程
                     </div>
                 </div>
                 
@@ -579,6 +624,15 @@ const PlanPage: React.FC = () => {
                     >
                         <TbDragDrop size={24} />
                     </button> */}
+                </div>
+
+                <div className="fixed flex flex-col lg:hidden bottom-[240px] right-5 space-y-2 z-10 opacity-80">
+                    <button
+                        onClick={() => router.push(`/sharing?tripId=${tripId}`)}
+                        className="bg-custom-kame text-white p-3 rounded-full shadow-lg active:scale-95 active:shadow-inner"
+                    >
+                        <FaShareSquare size={24} />
+                    </button>
                 </div>
 
                 {trip && (
@@ -606,11 +660,11 @@ const PlanPage: React.FC = () => {
                 </div>             
             </div>
 
-            <div className={`relative  order-1 lg:order-2  w-full lg:w-8/12  ${topDivLarger ? "h-[66.67%]" : "h-[90%]"} lg:h-full  flex flex-row transition-all duration-500 ease-in-out`}>
+            <div className={`relative  order-1 lg:order-2  w-full lg:w-[66.67%]  ${topDivLarger ? "h-[66.67%]" : "h-[90%]"} lg:h-full  flex flex-row transition-all duration-500 ease-in-out`}>
                 <DragDropContext onDragEnd={onDragEnd}>
 
                     {/* 景點列表 */}
-                    <div className="flex flex-col w-[45%] sm:1/3 lg:w-1/4   h-full  p-4 custom-scrollbar-y overflow-y-auto transition-all duration-1000 ease-out">
+                    <div className="flex flex-col w-[45%] sm:w-[33.33%] lg:w-[25%]   h-full  pt-4 px-3 sm:p-4 custom-scrollbar-y overflow-y-auto transition-all duration-1000 ease-out">
 
                         {trip && (
                             <div className="mb-3 p-2 border-2 shadow-md bg-white rounded-xl text-center block lg:hidden">
@@ -621,21 +675,27 @@ const PlanPage: React.FC = () => {
                         )}
 
                         <div className="flex flex-col">
-                            {placeLists.map((placeList) => (
+                            {placeLists.length === 0 ? (
+                                <div className="flex flex-wrap items-start pt-28 justify-center text-gray-400">
+                                    還沒有可拖曳景點，回到前頁儲存一些景點吧
+                                </div>
+                            ) : (
+                                placeLists.map((placeList) => (
                                 <Droppable droppableId={placeList.id} direction="vertical" key={placeList.id}>
                                     {(provided) => (
                                         <div
                                             ref={provided.innerRef}
                                             {...provided.droppableProps}
-                                            className="flex-shrink-0 p-2 border rounded-xl bg-white mb-4 h-auto min-w-[100px] w-full overflow-y-auto custom-scrollbar-y"
+                                            className="flex-shrink-0 p-2 border rounded-xl bg-white mt-3 h-auto min-w-[100px] w-full overflow-y-auto custom-scrollbar-y"
                                         >
-                                            <div className="flex justify-center items-center text-lg font-bold mb-2 text-center cursor-pointer ${placeList.places && placeList.places.length > 0 ? 'text-black' : 'text-gray-400'}`" onClick={() => toggleCollapse(placeList.id)}>
+                                            <div className="flex justify-center items-center text-base lg:text-lg font-bold mb-2 text-center cursor-pointer ${placeList.places && placeList.places.length > 0 ? 'text-black' : 'text-gray-400'}`" onClick={() => toggleCollapse(placeList.id)}>
                                                 {placeList.title}
                                                 <MdExpandMore
                                                     className={`${collapsedListIds.includes(placeList.id) ? 'rotate-0' : 'rotate-180'} transition-transform`}
                                                 />
                                             </div>
                                             <div className={`transition-max-height duration-500 ease-in-out overflow-hidden ${collapsedListIds.includes(placeList.id) ? 'max-h-0' : 'max-h-[400px]'}`}>
+
                                             {!collapsedListIds.includes(placeList.id) && placeList.places?.map((place, index) => (
                                                 <Draggable key={place.id} draggableId={place.id} index={index}>
                                                     {(provided) => {
@@ -661,14 +721,15 @@ const PlanPage: React.FC = () => {
                                         </div>
                                     )}
                                 </Droppable>
-                            ))}
+                            ))
+                        )}
                         </div>
                     </div>
                 
                     {/* 行程規劃 */}
-                    <div className="relative  flex flex-col lg:flex-grow  w-[55%] sm:w-2/3 lg:w-3/4 overflow-auto transition-all duration-1000 ease-out">
-                        <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mt-4 mb-2 h-full overflow-y-auto custom-scrollbar-y">
-                            <div className="flex flex-row align-top h-full ml-4">
+                    <div className="relative  flex flex-col lg:flex-grow  w-[55%] sm:w-[66.67%] lg:w-[75%] overflow-auto transition-all duration-1000 ease-out">
+                        <div className="overflow-x-scroll custom-scrollbar-x whitespace-nowrap mt-4 lg:mt-7  mb-2 h-full overflow-y-auto custom-scrollbar-y">
+                            <div className="flex flex-row align-top h-full ml-3">
                                 {tripDateRange.map((date) => {
                                     const dateKey = date.toISOString().split('T')[0];
                                     const tasksForDate = itineraries[dateKey] || [];
@@ -685,7 +746,8 @@ const PlanPage: React.FC = () => {
                                                         {date.toLocaleDateString('zh-TW', {
                                                                 year: 'numeric',
                                                                 month: '2-digit',
-                                                                day: '2-digit'
+                                                                day: '2-digit',
+                                                                weekday: 'narrow'
                                                         })}
                                                     </div>
                                                     
@@ -797,6 +859,7 @@ const PlanPage: React.FC = () => {
                                 <FaRegSave
                                     className="text-white text-2xl"
                                     title="儲存行程"
+                                    size={24}
                                 />
                                 <span className="hidden lg:block ml-2">儲存行程</span>
                             </div>

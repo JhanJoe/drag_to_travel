@@ -193,8 +193,8 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 >
                     <input
                         type="text"
-                        placeholder="輸入景點名稱後，點擊浮現對話框的景點開始搜尋。或也可以直接點擊地圖上景點"
-                        className="absolute top-4 left-4 z-10 p-2 border rounded w-3/4"
+                        placeholder="輸入名稱，開始搜尋及儲存"
+                        className="fixed  text-sm sm:text-base top-[50px] sm:top-[66px] left-[3%] lg:left-[35%] z-10 p-1 lg:p-2 border rounded w-[40%] min-w-[230px] "
                         value={searchValue}
                         onChange={(e) => setSearchValue(e.target.value)}
                     />
@@ -204,7 +204,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 onLoad={onLoad}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
                 zoom={10}
-                options={{ mapTypeControl: false, gestureHandling: 'cooperative', streetViewControl: false, }} // 取消地圖/衛星切換功能、街景小人功能
+                options={{ mapTypeControl: false, gestureHandling: 'greedy', streetViewControl: false, fullscreenControl: false, zoomControl: false}} // 取消地圖/衛星切換功能、街景小人、全螢幕功能，讓所有手勢都可以操作地圖
                 onClick={handleMapClick}
             >
                 {markerPosition && (
@@ -214,40 +214,73 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                             <InfoWindow
                                 position={markerPosition}
                                 onCloseClick={() => setInfoWindowOpen(false)}
+                                options={{ maxWidth: 350}}
+                                zIndex={50}
                             >
-                                <div className="z-30 m-0 p-0">
-                                    {placePhotoUrl && (
-                                        <Image
-                                            src={placePhotoUrl}
-                                            alt={selectedPlace.name}
-                                            width={125} 
-                                            height={70} 
-                                            className="w-full h-auto mb-2 rounded m-0 p-0 object-contain max-h-[150px] "
-                                        />
+                                <div className="z-50 m-0 p-0">
+                                    {handleAddToPlaceList && (
+                                        <select
+                                            onChange={(e) => handleAddToPlaceList(e.target.value)}
+                                            className="mb-1 ml-1 p-1 bg-custom-kame text-gray-600 rounded"
+                                        >
+                                            <option value="">選擇欲存放清單</option>
+                                            {placeLists.map((placeList) => (
+                                                <option key={placeList.id} value={placeList.id}>
+                                                    {placeList.title}
+                                                </option>
+                                            ))}
+                                        </select>
                                     )}
-                                    <div className="p-2">
-                                        <h2 className="text-lg font-bold">{selectedPlace.name}</h2>
-                                        <div className="flex items-center">
-                                            <FaStar className="text-yellow-500 mr-1" />
-                                            <p>{selectedPlace.rating ? `評分: ${selectedPlace.rating}/5 (${selectedPlace.user_ratings_total} 評論)` : ''}</p>
+
+                                    <div className="p-1">
+                                        <div className="relative w-[125px] h-[100px]">
+                                            {placePhotoUrl && (
+                                                <Image
+                                                    src={placePhotoUrl}
+                                                    alt={selectedPlace.name}
+                                                    // width={125} 
+                                                    // height={70} 
+                                                    fill
+                                                    // layout="responsive" // 讓圖片根據容器比例進行縮放
+                                                    className="rounded m-0 p-0 object-contain "
+                                                />
+                                            )}
                                         </div>
-                                        {selectedPlace.opening_hours?.weekday_text && Array.isArray(selectedPlace.opening_hours.weekday_text) && selectedPlace.opening_hours.weekday_text.length > 0 ? (
-                                            <>
-                                                <p>開放時間：</p>
-                                                {selectedPlace.opening_hours?.weekday_text.map((day: string, index: number) => (
-                                                    <p key={index}>{day}</p>
-                                                ))}
-                                            </>
-                                        ) : (
-                                            <p>開放時間：-- </p>
-                                        )}
-                                        {selectedPlace.website && (
-                                            <a href={selectedPlace.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                                官方網站
-                                            </a>
-                                        )}
-                                        <br />
-                                        {handleAddToPlaceList && (
+                                        <div className="">
+                                            <div className="flex items-center gap-2">
+                                                <h2 className="text-base lg:text-lg font-bold">{selectedPlace.name}</h2>
+                                                {selectedPlace.website && (
+                                                <a href={selectedPlace.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                                                    官方網站
+                                                </a>
+                                            )}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <FaStar className="text-yellow-500 mr-1" />
+                                                <p>{selectedPlace.rating ? `評分: ${selectedPlace.rating}/5 (${selectedPlace.user_ratings_total} 評論)` : ''}</p>
+                                            </div>
+                                            {selectedPlace.opening_hours?.weekday_text && Array.isArray(selectedPlace.opening_hours.weekday_text) && selectedPlace.opening_hours.weekday_text.length > 0 ? (
+                                                <>
+                                                    <p>開放時間：</p>
+                                                        <div className="grid grid-cols-2 gap-x-2 text-xs sm:text-sm">
+                                                        {selectedPlace.opening_hours?.weekday_text.map((day: string, index: number) => {
+                                                            const dayNumber = day.replace('星期', '');
+                                                            return (
+                                                                <p key={index}>
+                                                                    <span>{dayNumber}</span>
+                                                                </p>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <p>開放時間：-- </p>
+                                            )}
+                                            
+                                        </div>
+
+                                        {/* <br /> */}
+                                        {/* {handleAddToPlaceList && (
                                         <select
                                             onChange={(e) => handleAddToPlaceList(e.target.value)}
                                             className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
@@ -259,7 +292,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                                 </option>
                                             ))}
                                         </select>
-                                        )}
+                                        )} */}
                                     </div>
                                 </div>
                             </InfoWindow>

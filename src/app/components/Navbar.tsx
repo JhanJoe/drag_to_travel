@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
           {user ? (
             <>
               <span className="text-custom-reseda-green text-xs xs:text-base transition-all duration-1000 ease-out">歡迎，{user.email}</span>
-              <Link href="/trips" className="bg-custom-kame px-2 py-1 rounded text-gray-600 hover:bg-custom-atomic-tangerine hover:text-white text-xs xs:text-base transition-all duration-1000 ease-out">建立/選擇行程</Link>
+              <Link href="/trips" className="bg-custom-kame px-2 py-1 rounded text-gray-600 hover:bg-custom-atomic-tangerine hover:text-white text-xs xs:text-base transition-all duration-500 ease-out">我的行程</Link>
               <button onClick={handleSignOut} className="text-custom-reseda-green hover:text-custom-atomic-tangerine transition-all duration-1000 ease-out" >
                 <span className="hidden sm:inline">會員登出</span>
                 <span className="sm:hidden inline text-2xl">

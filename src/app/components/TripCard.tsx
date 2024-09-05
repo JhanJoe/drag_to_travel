@@ -43,7 +43,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit }) => {
                     onClick={() => onEdit(trip)}
                     className="bg-custom-kame text-gray-600 p-2 rounded h-10 mr-3 flex items-center justify-center active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-110 transform"
                 >
-                    編輯行程
+                    修改資訊
                 </button>
                 <Link href={`/map?tripId=${trip.id}`}>
                     <button className="bg-custom-atomic-tangerine text-white p-2 rounded h-10 flex items-center justify-center active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-110 transform">
