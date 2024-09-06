@@ -35,51 +35,50 @@ const SharingPage: React.FC = () => {
     const { user, loading, checkTripPermission } = useAuth();
     const { trip, setTrip } = useTripContext();
     const { startLoading, stopLoading } = useLoading();
-    
     const [tripId, setTripId] = useState<string | null>(null);
     const [itineraries, setItineraries] = useState<Record<string, ItineraryPlace[]>>({});
     const [routeInfo, setRouteInfo] = useState<Record<string, Record<string, RouteInfo>>>({});
     const [isOwner, setIsOwner] = useState<boolean>(false);
+    const [isShared, setIsShared] = useState(false); //用以協助切換分享按鍵狀態
+    const [isLoading, setIsLoading] = useState(true); //用來標記loading狀態，防止過早渲染
     const tripDataLoadingRef = useRef(false);
     const router = useRouter();
-    const [isShared, setIsShared] = useState(false);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const searchParams = new URLSearchParams(window.location.search);
-            const id = searchParams.get("tripId");
-            setTripId(id);
-        }
-    }, []);
+        const fetchData = async () => {
+            if (typeof window !== 'undefined') {
+                const searchParams = new URLSearchParams(window.location.search);
+                const id = searchParams.get("tripId");
 
-    useEffect(() => {
-        const checkOwnershipAndFetchData = async () => {
-            if (tripId) {
-                startLoading("正在載入資料...");
-                try {
-                    // 檢查user是否為trip owner
-                    if (user) {
-                        const ownershipStatus = await checkTripPermission(tripId);
-                        setIsOwner(ownershipStatus);
-                    } else {
-                        setIsOwner(false);
+                if (id) {
+                    setTripId(id);
+                    startLoading("正在載入資料...");
+
+                    try {
+                        // 檢查user是否為trip owner
+                        if (user) {
+                            const ownershipStatus = await checkTripPermission(id);
+                            setIsOwner(ownershipStatus);
+                        } else {
+                            setIsOwner(false);
+                        }
+
+                        // 無論是否為owner，都fetch行程
+                        await fetchTrip(id);
+                        await fetchItineraryData(id);
+                    } catch (error) {
+                        console.error("Error checking ownership or fetching data:", error);
+                    } finally {
+                        stopLoading();
+                        setIsLoading(false);
                     }
-
-                    // 無論是否為owner，都fetch行程
-                    await fetchTrip(tripId);
-                    await fetchItineraryData(tripId);
-                } catch (error) {
-                    console.error("Error checking ownership or fetching data:", error);
-                } finally {
-                    stopLoading();
+                } else {
+                setIsLoading(false);
                 }
-            } else {
-                stopLoading();
-                router.push('/');
             }
         };
 
-        checkOwnershipAndFetchData();
+        fetchData();
     }, [tripId, user, checkTripPermission]);
 
     const fetchItineraryData = async (tripId: string) => {
@@ -184,7 +183,8 @@ const SharingPage: React.FC = () => {
         return <div className="ml-3 mt-7">Loading...</div>;
     }
 
-    if (!trip){
+    if (!trip && !isLoading) {
+        router.push("/");
         return <div className="ml-3 mt-7">該行程不存在，回到首頁...</div>;
     }
 

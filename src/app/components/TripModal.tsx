@@ -50,7 +50,7 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
         if (startDate && endDate) {
             const start = new Date(startDate);
             const end = new Date(endDate);
-            if (end <= start) {
+            if (end < start) {
                 setEndDateError("結束日期應比開始日期晚");
                 hasError = true;
             }
