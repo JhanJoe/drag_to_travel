@@ -8,11 +8,9 @@ import { Trip, Place, PlaceList, Itinerary, ItineraryPlace, } from '../types/tri
 import { useLoading } from "../contexts/LoadingContext";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import GoogleMapComponent from "../components/GoogleMapComponent";
-// import { FaStar } from "react-icons/fa";
 import { db } from "../../../firebase-config";
 import { setDoc, updateDoc, doc, getDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { FaRegSave, FaMapMarkedAlt } from "react-icons/fa";
-// import { TbDragDrop } from "react-icons/tb";
 import { MdExpandMore } from "react-icons/md";
 import Image from 'next/image';
 import { FaArrowsAltV } from "react-icons/fa";
@@ -57,11 +55,9 @@ const PlanPage: React.FC = () => {
         return initialCollapsed;
     });
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); //紀錄是否有未儲存的更改
-    const [topDivLarger, setTopDivLarger] = useState(true); // 切換上下佈局比例
+    const [topDivLarger, setTopDivLarger] = useState(false); // 切換上下佈局比例
     const [hasPermission, setHasPermission] = useState<boolean | null>(null); // 檢查是否為owner
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-
-    
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -312,6 +308,10 @@ const PlanPage: React.FC = () => {
     const onDragEnd = (result: any) => {
         const { source, destination } = result;
 
+        console.log('Drag ended:', { source, destination }); //TODO
+        console.log('Current itineraries:', itineraries); //TODO
+        console.log('Current placeLists:', placeLists); //TODO
+
         if (!destination) {
             return;
         }
@@ -323,12 +323,19 @@ const PlanPage: React.FC = () => {
         console.log('source.index:', source.index); //TODO
         console.log('source.droppableId:', source.droppableId); //TODO
 
+        // 檢查destination是否為placelist之一，如果是就return（亦即阻止drop在placelist區域->只能拖出）
+        if (placeLists.some(list => list.id === destination.droppableId)) {
+            return;
+        }
+
         if (source.droppableId in itineraries) {
             sourceList = itineraries[source.droppableId];
         } else {
             const placeList = placeLists.find(pl => pl.id === source.droppableId);
             sourceList = placeList?.places;
         }
+
+        console.log('Source list:', sourceList); //TODO
 
         if (!sourceList) {
             console.error("Source list not found.");
@@ -337,6 +344,8 @@ const PlanPage: React.FC = () => {
 
         // 從來源列表中找到被拖曳的item
         const movedItem = sourceList[source.index];
+
+        console.log('Moved item:', movedItem); //TODO
 
         if (!movedItem) {
             console.error("Moved item not found.");
@@ -427,7 +436,7 @@ const PlanPage: React.FC = () => {
 
         if (mapInstance) {
             mapInstance.panTo(position);
-            // mapInstance.setZoom(15); 
+            mapInstance.setZoom(10); 
         }
 
         // RWD時，地圖center往position上方一點偏移(以讓infowindow顯示完整一點)
@@ -695,7 +704,7 @@ const PlanPage: React.FC = () => {
                                 </div>
                             ) : (
                                 placeLists.map((placeList) => (
-                                <Droppable droppableId={placeList.id} direction="vertical" key={placeList.id}>
+                                <Droppable droppableId={placeList.id} isDropDisabled={true} direction="vertical" key={placeList.id}>
                                     {(provided) => (
                                         <div
                                             ref={provided.innerRef}
@@ -708,6 +717,7 @@ const PlanPage: React.FC = () => {
                                                     className={`${collapsedListIds.includes(placeList.id) ? 'rotate-0' : 'rotate-180'} transition-transform`}
                                                 />
                                             </div>
+
                                             <div className={`transition-max-height duration-500 ease-in-out overflow-hidden ${collapsedListIds.includes(placeList.id) ? 'max-h-0' : 'max-h-[400px]'}`}>
 
                                             {!collapsedListIds.includes(placeList.id) && placeList.places?.map((place, index) => (
@@ -725,13 +735,12 @@ const PlanPage: React.FC = () => {
                                                         >
                                                             <div className="text-sm font-bold truncate" title={place.title}>{place.title}</div>
                                                         </div>
-            );
-        }}
-                                                    
+                                                        );
+                                                    }}
                                                 </Draggable>
                                             ))}
-                                            {provided.placeholder}
-                                        </div>
+                                                {provided.placeholder}
+                                            </div>
                                         </div>
                                     )}
                                 </Droppable>

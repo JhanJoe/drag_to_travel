@@ -34,6 +34,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             setSignUpEmail("");
             setSignUpPassword("");
             setIsSignUp(false);
+            setTimeout(() => {
+                onClose();
+                window.location.href = '/trips';
+            }, 1000);
         } catch (error: any) {
             console.error("Error signing up:", error);
             setStatusMessage(`註冊失敗: ${error.message}`);
@@ -62,9 +66,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             }
     };
 
+    const handleTestAccountSignIn = async () => {
+        setSignInEmail("example@email.com");
+        setSignInPassword("example");
+        try {
+            await signInWithEmailAndPassword(auth, "example@email.com", "example");
+            // console.log("測試帳號登入成功 startloading"); //TODO
+            startLoading("登入成功，請稍候...");
+            // console.log("放入localstorage中的isLoading");
+            localStorage.setItem('isLoading', 'true');
+            setTimeout(() => {
+                onClose();
+                window.location.href = '/trips';
+            }, 1000);
+        } catch (error: any) {
+            console.error("Error signing in with test account:", error);
+            setStatusMessage(`登入失敗: ${error.message}`);
+            setStatusColor("text-red-500"); 
+            // console.log("authmodal-測試帳號登入失敗 stoploading");
+            stopLoading(); 
+        }
+    };
+
     return (
         <>
-            <div className="relative bg-white rounded-lg shadow-lg p-6 w-[350px] h-[320px]">
+            <div className="relative bg-white rounded-lg shadow-lg p-6 w-[350px]">
             {isSignUp ? (
                 <form onSubmit={handleSignUp} className="flex flex-col h-full relative">
                     {/* <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-custom-1"></div>  TODO 漸變顏色條 尚未調整*/}
@@ -86,20 +112,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     />
                     <button
                         type="submit"
-                        className="bg-custom-kame text-gray-600 font-bold py-2 rounded"
+                        className="bg-custom-kame text-gray-600 font-bold py-2 rounded transition-all duration-300 z-30 active:scale-95 active:shadow-inner hover:bg-custom-atomic-tangerine hover:text-white"
                     >
                         註冊
                     </button>
+
                     {statusMessage && (
                         <p className={`mt-2 ${statusColor} text-center`}>{statusMessage}</p>
                     )}
                     <button
                         type="button"
                         onClick={() => setIsSignUp(false)}
-                        className="mt-3 text-gray-500"
+                        className="mt-3 text-gray-500 hover:underline"
                     >
                         已有帳號？ 請點擊登入
                     </button>
+
+                    <button
+                    type="button"
+                    onClick={handleTestAccountSignIn}
+                    className="mt-3 text-gray-500"
+                >
+                    使用測試帳號登入
+                </button>
                 </form>
             ) : (
             <form onSubmit={handleSignIn} className="flex flex-col h-full relative">
@@ -118,19 +153,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     value={signInPassword}
                     onChange={(e) => setSignInPassword(e.target.value)}
                 />
-                <button type="submit" className="bg-custom-kame text-gray-600 font-bold py-2 rounded">
+                <button type="submit" className="bg-custom-kame text-gray-600 font-bold py-2 rounded transition-all duration-300 z-30 active:scale-95 active:shadow-inner hover:bg-custom-atomic-tangerine hover:text-white">
                     登入
                 </button>
+
                 {statusMessage && (
                     <p className={`mt-2 justify-center ${statusColor} text-center`}>{statusMessage}</p>
                 )}
                 <button
                     type="button"
                     onClick={() => setIsSignUp(true)}
-                    className="mt-3 text-gray-500"
+                    className="mt-3 text-gray-500 hover:underline"
                 >
                     沒有帳號？ 請點擊註冊
                 </button>
+
+                <button
+                    type="button"
+                    onClick={handleTestAccountSignIn}
+                    className="mt-3 text-gray-500 hover:underline"
+                >
+                    使用測試帳號登入
+                </button>
+
                 </form>
             )}
             <button onClick={onClose} className="absolute top-2 right-4 text-3xl">

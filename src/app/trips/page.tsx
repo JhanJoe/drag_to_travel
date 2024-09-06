@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { collection,addDoc, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
+import { collection,addDoc, getDocs, doc, updateDoc, query, where, writeBatch } from "firebase/firestore";
 import { auth, onAuthStateChanged, db } from "../../../firebase-config";
 import TripCard from "../components/TripCard";
 import TripModal from "../components/TripModal";
@@ -78,8 +78,43 @@ const TripsPage: React.FC = () => {
         });
     };
 
-    const handleDeleteTrip = (id: string) => {
+    const handleDeleteTrip = async (id: string) => {
+        try {
+            const batch = writeBatch(db);
+    
+            // 刪除 places 資料
+            const placesQuery = query(collection(db, "places"), where("tripId", "==", id));
+            const placesSnapshot = await getDocs(placesQuery);
+            placesSnapshot.forEach((docSnapshot) => {
+                batch.delete(docSnapshot.ref);
+            });
+    
+            // 刪除 placeLists 資料
+            const placeListsQuery = query(collection(db, "placeLists"), where("tripId", "==", id));
+            const placeListsSnapshot = await getDocs(placeListsQuery);
+            placeListsSnapshot.forEach((docSnapshot) => {
+                batch.delete(docSnapshot.ref);
+            });
+    
+            // 刪除 itineraries 資料
+            const itinerariesQuery = query(collection(db, "itineraries"), where("tripId", "==", id));
+            const itinerariesSnapshot = await getDocs(itinerariesQuery);
+            itinerariesSnapshot.forEach((docSnapshot) => {
+                batch.delete(docSnapshot.ref);
+            });
+    
+            // 最後刪除 trips 中的資料
+            const tripDocRef = doc(db, "trips", id);
+            batch.delete(tripDocRef);
+    
+            // 批次刪除
+            await batch.commit();
+    
+            // 更新前端狀態，過濾掉被刪除的 trip
         setTrips(prevTrips => prevTrips.filter(trip => trip.id !== id));
+    } catch (error) {
+        console.error("Error deleting trip and related data:", error);
+    }
     };
 
     const handleEditTrip = (trip: Trip) => {
@@ -136,6 +171,21 @@ const TripsPage: React.FC = () => {
         }
     };
 
+    // 切換行程公開/隱藏
+    const handleTogglePublic = async (tripId: string, currentPublic: boolean) => {
+        try {
+            const tripDoc = doc(db, "trips", tripId);
+            await updateDoc(tripDoc, {
+                public: !currentPublic
+            });
+            setTrips(prevTrips => prevTrips.map(trip => 
+                trip.id === tripId ? { ...trip, public: !currentPublic } : trip
+            ));
+        } catch (error) {
+            console.error("Error updating trip public status: ", error);
+        }
+    };
+
     return (
         <div className="mt-3 p-3">
             <div
@@ -150,7 +200,13 @@ const TripsPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {trips.map(trip => (
-                <TripCard key={trip.id} trip={trip} onDelete={handleDeleteTrip} onEdit={handleEditTrip} />
+                <TripCard 
+                    key={trip.id} 
+                    trip={trip} 
+                    onDelete={handleDeleteTrip} 
+                    onEdit={handleEditTrip}
+                    onTogglePublic={handleTogglePublic}
+                />
                 ))}
             </div>
             {showModal && (

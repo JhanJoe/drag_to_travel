@@ -14,7 +14,7 @@ import { BsPersonWalking } from 'react-icons/bs';
 import { MdDirectionsTransit } from 'react-icons/md';
 import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { BiSolidHide } from "react-icons/bi";
-import { BiShowAlt, BiHide } from "react-icons/bi";
+import { BiShowAlt} from "react-icons/bi";
 import { FaShare } from "react-icons/fa";
 import { IoMdCloudDone } from "react-icons/io";
 
@@ -73,6 +73,9 @@ const SharingPage: React.FC = () => {
                 } finally {
                     stopLoading();
                 }
+            } else {
+                stopLoading();
+                router.push('/');
             }
         };
 
@@ -181,6 +184,10 @@ const SharingPage: React.FC = () => {
         return <div className="ml-3 mt-7">Loading...</div>;
     }
 
+    if (!trip){
+        return <div className="ml-3 mt-7">該行程不存在，回到首頁...</div>;
+    }
+
     return (
         <div className="flex flex-col h-full mt-2 sm:mt-4">
             {trip && (
@@ -258,6 +265,11 @@ const SharingPage: React.FC = () => {
                                         {trip.public ? <BiSolidHide /> : <BiShowAlt />}
                                     </span>
                                 </button>
+                            </div>
+                        )}
+                        {!isOwner && (
+                            <div className="text-gray-400 text-sm sm:text-base">
+                                分享者：{trip.userEmail?.split('@')[0]}
                             </div>
                         )}
                     </div>

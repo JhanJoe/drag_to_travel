@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef} from "react";
-import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, getDoc, query, where, deleteDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../../../firebase-config";
 import { useRouter } from "next/navigation";
 import PlaceListCard from "../components/PlaceListCard";
@@ -107,6 +107,23 @@ const MapPage: React.FC = () => {
     const handleDeletePlaceList = async (id: string) => {
         if (user && tripId) {
             try {
+                const batch = writeBatch(db);
+
+                // 首先查詢並刪除 places 中符合 placeListId 的所有 place（清理資料庫空間）
+                const placesQuery = query(
+                    collection(db, "places"),
+                    where("placeListId", "==", id)
+                );
+
+                const querySnapshot = await getDocs(placesQuery);
+
+                querySnapshot.forEach((docSnapshot) => {
+                    batch.delete(docSnapshot.ref);
+                });
+
+                // 批次刪除
+                await batch.commit();
+
                 await deleteDoc(doc(db, "placeLists", id));
                 // removePlaceFromList(tripId, id);
                 updatePlaceLists(prevPlaceLists => 
