@@ -172,7 +172,7 @@ const HomePage: React.FC = () => {
               STEP 3 - 規劃行程：
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl mb-2">
-              盡情拖&拉吧！
+              盡情拖 & 拉吧！
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
               從清單選取景點，在任一日期列表之間拖來拖去，也可以加入行程時間和切換交通方式，完成後記得儲存！
