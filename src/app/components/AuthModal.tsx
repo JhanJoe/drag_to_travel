@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import {
     auth,
     createUserWithEmailAndPassword,
@@ -19,11 +19,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const [signInPassword, setSignInPassword] = useState("");
     const [signUpEmail, setSignUpEmail] = useState("");
     const [signUpPassword, setSignUpPassword] = useState("");
-
-    const router = useRouter();
     const [statusMessage, setStatusMessage] = useState("  "); // 註冊/登入後顯示訊息
     const [statusColor, setStatusColor] = useState("text-green-500"); // 訊息顏色，預設為綠色（成功）；反之為紅色（error）
     const { startLoading, stopLoading } = useLoading(); //使用LoadingContext
+    // const router = useRouter();
 
     const handleSignUp = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -49,9 +48,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         event.preventDefault();
         try {
             await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
-            console.log("authmodal-登入成功 startloading");  //TODO 待刪
             startLoading("登入成功，請稍候...");
-            console.log("放入localstorage中的isLoading");  //TODO 待刪
             localStorage.setItem('isLoading', 'true'); // Set loading flag
             setTimeout(() => {
                 onClose();
@@ -61,7 +58,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             console.error("Error signing in:", error);
             setStatusMessage(`登入失敗: ${error.message}`);
             setStatusColor("text-red-500"); 
-            console.log("authmodal-登入失敗 stoploading");  //TODO 待刪
             stopLoading(); 
             }
     };
@@ -71,9 +67,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         setSignInPassword("example");
         try {
             await signInWithEmailAndPassword(auth, "example@email.com", "example");
-            // console.log("測試帳號登入成功 startloading"); //TODO
             startLoading("登入成功，請稍候...");
-            // console.log("放入localstorage中的isLoading");
             localStorage.setItem('isLoading', 'true');
             setTimeout(() => {
                 onClose();
@@ -83,7 +77,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             console.error("Error signing in with test account:", error);
             setStatusMessage(`登入失敗: ${error.message}`);
             setStatusColor("text-red-500"); 
-            // console.log("authmodal-測試帳號登入失敗 stoploading");
             stopLoading(); 
         }
     };
@@ -93,8 +86,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             <div className="relative bg-white rounded-lg shadow-lg p-6 w-[350px]">
             {isSignUp ? (
                 <form onSubmit={handleSignUp} className="flex flex-col h-full relative">
-                    {/* <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-custom-1"></div>  TODO 漸變顏色條 尚未調整*/}
-                    
                     <h2 className="text-3xl mb-4 text-center">註冊</h2>
                     <input
                         type="email"

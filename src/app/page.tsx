@@ -38,16 +38,6 @@ const HomePage: React.FC = () => {
   return (
     <div className="home-page flex flex-col items-center justify-center text-center">
       <div className="relative w-full h-screen overflow-hidden">
-      {/* TODO還不確定要不要放影片 
-        <video
-          autoPlay
-          loop
-          muted
-          className="absolute w-full h-full object-cover opacity-45"
-        >
-          <source src="/videos/sky-1.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video> */}
         {images.map((image, index) => (
           <div
             key={index}

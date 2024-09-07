@@ -193,8 +193,6 @@ const PlanPage: React.FC = () => {
         ? new Date(`${dateKey}T${convertTo24HourFormat(origin.arrivedTime)}:00`)
         : new Date();
 
-        console.log('departureTime:', departureTime); //TODO
-
         const request = {
             origin: new google.maps.LatLng(originPosition.lat, originPosition.lng),
             destination: new google.maps.LatLng(destinationPosition.lat, destinationPosition.lng),
@@ -208,7 +206,7 @@ const PlanPage: React.FC = () => {
             })
         };
 
-        console.log('request:', request); //TODO
+        // console.log('request:', request); //TODO
 
         try {
             const result = await directionsService.route(request);
@@ -225,7 +223,6 @@ const PlanPage: React.FC = () => {
                             [`${origin.id}-${destination.id}`]: { duration: -1, mode }
                         }
                     }));
-                    console.log('duration:', duration); //TODO
                 } else {
                     setRouteInfo(prevRouteInfo => ({
                         ...prevRouteInfo,
@@ -234,7 +231,6 @@ const PlanPage: React.FC = () => {
                             [`${origin.id}-${destination.id}`]: { duration: duration / 60, mode }
                         }
                     }));
-                    console.log('duration:', duration); //TODO
                 }
             } else {
                 setRouteInfo(prevRouteInfo => ({
@@ -308,9 +304,9 @@ const PlanPage: React.FC = () => {
     const onDragEnd = (result: any) => {
         const { source, destination } = result;
 
-        console.log('Drag ended:', { source, destination }); //TODO
-        console.log('Current itineraries:', itineraries); //TODO
-        console.log('Current placeLists:', placeLists); //TODO
+        // console.log('Drag ended:', { source, destination }); //TODO
+        // console.log('Current itineraries:', itineraries); //TODO
+        // console.log('Current placeLists:', placeLists); //TODO
 
         if (!destination) {
             return;
@@ -319,9 +315,9 @@ const PlanPage: React.FC = () => {
         // 來源列表與目標列表
         let sourceList: (Place | ItineraryPlace)[] | undefined;
 
-        console.log('sourceList:', sourceList); //TODO
-        console.log('source.index:', source.index); //TODO
-        console.log('source.droppableId:', source.droppableId); //TODO
+        // console.log('sourceList:', sourceList); //TODO
+        // console.log('source.index:', source.index); //TODO
+        // console.log('source.droppableId:', source.droppableId); //TODO
 
         // 檢查destination是否為placelist之一，如果是就return（亦即阻止drop在placelist區域->只能拖出）
         if (placeLists.some(list => list.id === destination.droppableId)) {
@@ -335,7 +331,7 @@ const PlanPage: React.FC = () => {
             sourceList = placeList?.places;
         }
 
-        console.log('Source list:', sourceList); //TODO
+        // console.log('Source list:', sourceList); //TODO
 
         if (!sourceList) {
             console.error("Source list not found.");
@@ -345,7 +341,7 @@ const PlanPage: React.FC = () => {
         // 從來源列表中找到被拖曳的item
         const movedItem = sourceList[source.index];
 
-        console.log('Moved item:', movedItem); //TODO
+        // console.log('Moved item:', movedItem); //TODO
 
         if (!movedItem) {
             console.error("Moved item not found.");
@@ -475,7 +471,6 @@ const PlanPage: React.FC = () => {
         if (!user || !tripId) return;
     
         try {
-            console.log("開始加載動畫和儲存行程至DB") //TODO
             setIsSaving(true);  // 標記開始儲存的state
             startLoading("儲存中..."); //loading動畫
             
@@ -483,7 +478,6 @@ const PlanPage: React.FC = () => {
             const removeUndefined = (obj: any) => {
                 Object.keys(obj).forEach(key => {
                     if (obj[key] === undefined) {
-                        // delete obj[key];
                         obj[key] = null;
                     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
                         removeUndefined(obj[key]);
@@ -531,7 +525,6 @@ const PlanPage: React.FC = () => {
         await batch.commit();
 
         setHasUnsavedChanges(false);
-        console.log("行程已成功儲存到 Firebase!");
         startLoading("儲存成功!");
         setTimeout(() => {
             stopLoading();
@@ -558,7 +551,6 @@ const PlanPage: React.FC = () => {
                 itineraryPlace.id.includes(place.id)
             )
         );
-    // console.log(`Place ${place.id} is in itinerary: `, result); //TODO
     return result;
     };
 
@@ -641,12 +633,6 @@ const PlanPage: React.FC = () => {
                     >
                         <FaMapMarkedAlt size={24} />
                     </button>
-                    {/* <button
-                        onClick={() => router.push(`/planning?tripId=${tripId}`)}
-                        className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-90"
-                    >
-                        <TbDragDrop size={24} />
-                    </button> */}
                 </div>
 
                 <div className="fixed flex flex-col lg:hidden bottom-[300px] right-5 space-y-2 z-10 opacity-80">
@@ -843,9 +829,6 @@ const PlanPage: React.FC = () => {
 
                                                                         <div className="text-base font-bold truncate" title={task.title}>{task.title}</div>
                                                                         <div className="text-xs text-gray-600 truncate" title={task.address}>{task.address}</div>
-                                                                        {/* <div className="text-xs text-gray-400 flex">
-                                                                            <FaStar className="text-yellow-500 mr-1" />{task.rating}/5</div> */}
-
                                                                         <div className="flex-row items-center">
                                                                         <span className="text-xs">離開 </span>
                                                                         <input

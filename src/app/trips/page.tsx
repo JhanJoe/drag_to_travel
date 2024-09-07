@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { collection,addDoc, getDocs, doc, updateDoc, query, where, writeBatch } from "firebase/firestore";
-import { auth, onAuthStateChanged, db } from "../../../firebase-config";
+import { db } from "../../../firebase-config";
 import TripCard from "../components/TripCard";
 import TripModal from "../components/TripModal";
 import { useLoading } from "../contexts/LoadingContext";
@@ -25,8 +25,6 @@ const TripsPage: React.FC = () => {
         hasFetchedRef.current = true;
 
         try {
-            console.log("執行fetchtrip函式"); //TODO 待刪
-
             startLoading("正在載入資料...");
             const tripsCollection = collection(db, "trips");
             const q = query(tripsCollection, where("userId", "==", userId));
@@ -42,7 +40,6 @@ const TripsPage: React.FC = () => {
         } catch (error) {
             console.error("Error fetching trips:", error);
         } finally {             
-            console.log("trippage-執行完fetchtrip, 結束loading動畫") //TODO 待刪
             stopLoading();
         }
     }, [stopLoading]);
@@ -50,10 +47,7 @@ const TripsPage: React.FC = () => {
     useEffect(() => {        
         const isLoadingFromLogin = localStorage.getItem('isLoading') === 'true';
             if (isLoadingFromLogin) {
-                console.log("開始執行trippage-startloading");  //TODO 待刪
                 startLoading("正在載入資料...");
-
-                console.log("trippage-移除localstorage中的isLoading");  //TODO 待刪
                 localStorage.removeItem('isLoading');
             }
 
@@ -65,7 +59,6 @@ const TripsPage: React.FC = () => {
             }
 
         return () => {
-            console.log("trippage-移除localstorage中的isLoading");  //TODO 待刪
             localStorage.removeItem('isLoading');
         };
     }, [user, loading, router, fetchTrips, startLoading, stopLoading]);    
@@ -197,7 +190,7 @@ const TripsPage: React.FC = () => {
                 }}
             >
                 <div className="text-center text-4xl">+</div>
-                <div className="text-center text-xl">請新增行程來開始後續規劃</div>
+                <div className="text-center text-lg sm:text-xl">請新增行程來開始後續規劃</div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {trips.map(trip => (

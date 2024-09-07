@@ -5,15 +5,14 @@ import { Place, PlaceList } from '../types/tripAndPlace';
 
 interface PlaceListCardProps {
     placeList: PlaceList & { places?: Place[] };
-    onDelete?: (id: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
-    onUpdate?: (id: string, updatedTitle: string, updatedNotes: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
-    onDeletePlace?: (placeId: string, placeListId: string) => void; //可選參數：在planning頁面不使用 TODO 後來不使用應該可刪
+    onDelete?: (id: string) => void; 
+    onUpdate?: (id: string, updatedTitle: string, updatedNotes: string) => void; 
+    onDeletePlace?: (placeId: string, placeListId: string) => void; 
     onPlaceClick?: (place: Place) => void;
     children?: React.ReactNode;    
 }
 
 const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUpdate, onDeletePlace, onPlaceClick, children }) => {
-    console.log("PlaceList in PlaceListCard:", placeList); //TODO 待刪
     const [isEditing, setIsEditing] = useState(false);
     const [updatedTitle, setUpdatedTitle] = useState(placeList.title);
     const [updatedNotes, setUpdatedNotes] = useState(placeList.notes);
@@ -67,7 +66,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     {onUpdate && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="absolute top-3 right-8 text-xl text-gray-400" title="編輯行程"
+                            className="absolute top-3 right-9 text-xl text-gray-400" title="編輯行程"
                         >
                             <FaEdit />
                         </button>
@@ -77,14 +76,12 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
                     <div className="text-center text-gray-400 text-sm">{placeList.notes}</div>
                     <div className="mt-2 overflow-y-auto flex-grow custom-scrollbar-y">
                     {placeList.places?.map((place) => {
-                    console.log("Place in map function:", place); //TODO
                     return (
                         <div key={place.id} className="flex items-center justify-between text-center text-gray-600">
                             <div className="truncate cursor-pointer" title={place.title} onClick={() => onPlaceClick && onPlaceClick(place)}>{place.title}</div>
                             {onDeletePlace && (
                                 <button
                                     onClick={() => {
-                                        console.log("Deleting place:", place);  //TODO
                                         if (place.id) {
                                             onDeletePlace(place.id, placeList.id); 
                                         } else {

@@ -10,10 +10,8 @@ import GoogleMapComponent from "../components/GoogleMapComponent";
 import { useAuth } from "../contexts/AuthContext";
 import { useTripContext } from "../contexts/TripContext";
 import { useLoading } from "../contexts/LoadingContext";
-import { FaMapMarkedAlt } from "react-icons/fa";
 import { TbDragDrop } from "react-icons/tb";
 import { FaArrowsAltV } from "react-icons/fa";
-// import { FaShareSquare } from "react-icons/fa"; //TODO 此頁還沒做分享的icon button（要不要做？）
 import { FaRegQuestionCircle } from "react-icons/fa";
 import NotificationModal from "../components/NotificationModal";
 import Image from 'next/image';
@@ -125,7 +123,7 @@ const MapPage: React.FC = () => {
                 await batch.commit();
 
                 await deleteDoc(doc(db, "placeLists", id));
-                // removePlaceFromList(tripId, id);
+                // removePlaceFromList(tripId, id); //TODO
                 updatePlaceLists(prevPlaceLists => 
                     prevPlaceLists.filter(placeList => placeList.id !== id)
                 );
@@ -294,12 +292,6 @@ const MapPage: React.FC = () => {
 
                     {/* RWD時，換成規劃的icon按鈕 */}
                     <div className="fixed  lg:hidden right-5 bottom-[180px] flex flex-col space-y-2 z-10 opacity-80">
-                        {/* <button
-                            onClick={() => router.push(`/map?tripId=${tripId}`)}
-                            className="bg-custom-atomic-tangerine text-white p-3 rounded-full shadow-lg hover:bg-custom-atomic-tangerine hover:opacity-90"
-                        >
-                            <FaMapMarkedAlt size={24} />
-                        </button> */}
                         <button
                             onClick={() => router.push(`/planning?tripId=${tripId}`)}
                             className="bg-custom-kame text-white p-3 rounded-full shadow-lg active:scale-95 active:shadow-inner"

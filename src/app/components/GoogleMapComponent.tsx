@@ -16,7 +16,6 @@ interface GoogleMapComponentProps {
     placeLists: PlaceList[];
     handleAddToPlaceList?: (placeListId: string) => void; //planning頁面不需要
     enableSearch?: boolean; // 搜尋功能（planning不使用）
-    // enableMapClick?: boolean; // 地圖點擊功能
     onMapLoad?: (map: google.maps.Map) => void;
     placePhotoUrl: string | null;
     setPlacePhotoUrl: (url: string | null) => void;
@@ -30,7 +29,6 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     infoWindowOpen, setInfoWindowOpen,
     placeLists, handleAddToPlaceList,
     enableSearch = true, 
-    // enableMapClick = true, 
     onMapLoad,
     placePhotoUrl,
     setPlacePhotoUrl,
@@ -288,21 +286,6 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                             )}
                                             
                                         </div>
-
-                                        {/* <br /> */}
-                                        {/* {handleAddToPlaceList && (
-                                        <select
-                                            onChange={(e) => handleAddToPlaceList(e.target.value)}
-                                            className="mt-2 p-1 bg-custom-reseda-green text-white rounded"
-                                        >
-                                            <option value="">選擇列表</option>
-                                            {placeLists.map((placeList) => (
-                                                <option key={placeList.id} value={placeList.id}>
-                                                    {placeList.title}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        )} */}
                                     </div>
                                 </div>
                             </InfoWindow>

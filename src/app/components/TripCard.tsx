@@ -40,7 +40,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit, onTogglePub
                 ×
             </button>
             <div className="flex flex-row justify-center">
-                <div className="text-2xl font-bold">{trip.name}</div>
+                <div className="text-xl sm:text-2xl font-bold">{trip.name}</div>
                 <span 
                     className="text-gray-400 text-lg cursor-pointer hover:text-custom-atomic-tangerine transition-all duration-300 z-30 active:scale-95 active:shadow-inner hover:scale-110" 
                     onClick={() => onTogglePublic(trip.id, trip.public)}
@@ -49,8 +49,8 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit, onTogglePub
                     {trip.public ? <BiShowAlt /> : <BiSolidHide />}
                 </span>
             </div>
-            <div className="mt-0.5">{`${trip.startDate} ~ ${trip.endDate}`}</div>
-            <div className="mt-0.5 text-gray-500">{trip.notes.trim() !== "" ? trip.notes : "無"}</div>
+            <div className="mt-0.5 text-sm sm:text-base">{`${trip.startDate} ~ ${trip.endDate}`}</div>
+            <div className="mt-0.5 text-gray-500 text-sm sm:text-base">{trip.notes.trim() !== "" ? trip.notes : "無"}</div>
             <div className="mt-3 flex justify-center">
                 <button
                     onClick={() => onEdit(trip)}
