@@ -50,7 +50,7 @@ const TripCard: React.FC<TripCardProps> = ({ trip, onDelete, onEdit, onTogglePub
                 </span>
             </div>
             <div className="mt-0.5">{`${trip.startDate} ~ ${trip.endDate}`}</div>
-            <div className="mt-0.5 text-gray-500">{trip.notes}</div>
+            <div className="mt-0.5 text-gray-500">{trip.notes.trim() !== "" ? trip.notes : "無"}</div>
             <div className="mt-3 flex justify-center">
                 <button
                     onClick={() => onEdit(trip)}

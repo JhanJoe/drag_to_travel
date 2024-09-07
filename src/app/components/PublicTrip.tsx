@@ -65,7 +65,7 @@ const PublicTrip: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4 pt-2 mb-10">
             {publicTrips.map((trip, index) => (
                 <Link href={`/sharing?tripId=${trip.id}`} key={trip.id}>
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer min-w-[250px] h-[250px] p-2 active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-105 transform hover:border-2 hover:border-custom-atomic-tangerine">
+                    <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer min-w-[250px] h-[250px] p-2 pt-0 sm:p-2 active:scale-95 active:shadow-inner transition-all duration-300 ease-on-out hover:scale-105 transform hover:border-2 hover:border-custom-atomic-tangerine">
 
                         <div className="h-[60%] relative">
                             <Image

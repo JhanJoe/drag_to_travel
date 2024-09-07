@@ -20,7 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-TW">
-      <body className={inter.className + " pt-9 flex flex-col min-h-screen"}>
+      <body className={inter.className + " pt-9 flex flex-col min-h-screen"}
+      style={{ fontFamily: "'Inter', 'Noto Sans TC', 'sans-serif'" }}
+      >
         <AuthProvider>
           <TripProvider>
             <LoadingProvider>

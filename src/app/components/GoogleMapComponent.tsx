@@ -38,6 +38,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
     const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
     const [searchValue, setSearchValue] = useState<string>("");
+    const [selectedPlaceListId, setSelectedPlaceListId] = useState<string>(""); //下拉式選單狀態
     const mapRef = useRef<google.maps.Map | null>(null);
 
     const { isLoaded } = useJsApiLoader({
@@ -84,6 +85,8 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
             setInfoWindowOpen(true);
             setSearchValue(place.name || "");
         
+            setSelectedPlaceListId("");
+
             if (mapRef.current) {
                 mapRef.current.panTo(position);
                 const currentZoom = mapRef.current.getZoom();
@@ -220,7 +223,11 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                 <div className="z-50 m-0 p-0">
                                     {handleAddToPlaceList && (
                                         <select
-                                            onChange={(e) => handleAddToPlaceList(e.target.value)}
+                                            value={selectedPlaceListId}
+                                            onChange={(e) => {
+                                                setSelectedPlaceListId(e.target.value);
+                                                handleAddToPlaceList(e.target.value)
+                                            }}
                                             className="mb-1 ml-1 p-1 bg-custom-kame text-gray-600 rounded"
                                         >
                                             <option value="">選擇欲存放清單</option>

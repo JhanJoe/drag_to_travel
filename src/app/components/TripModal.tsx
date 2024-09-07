@@ -79,25 +79,31 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             value={name}
             onChange={e => setName(e.target.value)}
             />
-            <input
-            type="date"
-            className={`${startDateError ? 'mb-1' : 'mb-4'} p-2 border rounded w-full`}
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            required
-            />
+            <div className={`flex flex-row items-center ${startDateError ? 'mb-1' : 'mb-4'}`}>
+                <span className="w-24">開始日期</span>
+                <input
+                type="date"
+                className="p-2 border rounded w-full"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                required
+                />
+            </div>
 
-            {startDateError && <p className="text-custom-atomic-tangerine text-sm mb-3 transition-all duration-1000 ease-out">{startDateError}</p>}
+            {startDateError && <p className="text-custom-atomic-tangerine text-sm mb-3 ml-20 transition-all duration-1000 ease-out">{startDateError}</p>}
 
-            <input
-            type="date"
-            className={`${endDateError ? 'mb-1' : 'mb-4'} p-2 border rounded w-full`}
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            required
-            />
+            <div className={`flex flex-row items-center ${startDateError ? 'mb-1' : 'mb-4'}`}>
+                <span className="w-24">結束日期</span>
+                <input
+                type="date"
+                className="p-2 border rounded w-full"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                required
+                />
+            </div>
 
-            {endDateError && <p className="text-custom-atomic-tangerine text-sm mb-3 transition-all duration-1000 ease-out">{endDateError}</p>}
+            {endDateError && <p className="text-custom-atomic-tangerine text-sm mb-3 ml-20 transition-all duration-1000 ease-out">{endDateError}</p>}
 
             <input
             type="text"

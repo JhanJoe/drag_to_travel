@@ -9,13 +9,11 @@ import { useLoading } from "../contexts/LoadingContext";
 import { db, doc, updateDoc } from "../../../firebase-config";
 import { collection, query, where, getDocs, getDoc, } from "firebase/firestore";
 import Image from 'next/image';
-import { FaCar } from 'react-icons/fa';
+import NotificationModal from "../components/NotificationModal";
 import { BsPersonWalking } from 'react-icons/bs';
 import { MdDirectionsTransit } from 'react-icons/md';
-import { FaArrowAltCircleLeft } from "react-icons/fa";
-import { BiSolidHide } from "react-icons/bi";
-import { BiShowAlt} from "react-icons/bi";
-import { FaShare } from "react-icons/fa";
+import { FaCar, FaArrowAltCircleLeft, FaRegQuestionCircle, FaShare } from "react-icons/fa";
+import { BiSolidHide, BiShowAlt } from "react-icons/bi";
 import { IoMdCloudDone } from "react-icons/io";
 
 type TransportMode = 'DRIVING' | 'WALKING' | 'TRANSIT';
@@ -41,6 +39,7 @@ const SharingPage: React.FC = () => {
     const [isOwner, setIsOwner] = useState<boolean>(false);
     const [isShared, setIsShared] = useState(false); //用以協助切換分享按鍵狀態
     const [isLoading, setIsLoading] = useState(true); //用來標記loading狀態，防止過早渲染
+    const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
     const tripDataLoadingRef = useRef(false);
     const router = useRouter();
 
@@ -179,6 +178,13 @@ const SharingPage: React.FC = () => {
         }
     };
 
+    const helpImages = [
+        "/images/sharing-help-1.png",
+        "/images/sharing-help-2.png",
+        "/images/sharing-help-3.png",
+        "/images/sharing-help-4.png"
+    ];
+
     if (loading) {
         return <div className="ml-3 mt-7">Loading...</div>;
     }
@@ -194,21 +200,51 @@ const SharingPage: React.FC = () => {
                     <div className="mx-3 mb-3 p-4 border-b-2 bg-white flex items-center">
                         <div className="flex-1">
                         {isOwner && (
-                            <button
-                                onClick={() => router.push(`/planning?tripId=${tripId}`)}
-                                className="bg-custom-kame text-gray-600 text-xs sm:text-sm
-                                p-2  flex items-center space-x-2
-                                rounded-full sm:rounded-xl
-                                hover:bg-custom-atomic-tangerine hover:text-white
-                                active:scale-95 active:shadow-inner hover:scale-105
-                                transition-all duration-500 "
-                            >
-                                <FaArrowAltCircleLeft className="text-base sm:text-lg" />
-                                <span className="block sm:hidden">返回</span>
-                                <span className="hidden sm:block">返回規劃行程</span>
-                                
+                            <div className="flex-col space-y-2 py-[2px]">
+                                <button
+                                    onClick={() => setIsHelpModalOpen(true)}
+                                    className={`text-white bg-custom-atomic-tangerine p-2 rounded-full shadow-lg opacity-80 transition-all duration-500 z-30 active:scale-95 active:shadow-inner hover:scale-110`}
+                                >
+                                    <FaRegQuestionCircle className="animate-pulse" />
+                                </button>
 
-                            </button>
+                                {/* 使用說明 */}
+                                <NotificationModal
+                                    isOpen={isHelpModalOpen}
+                                    onClose={() => setIsHelpModalOpen(false)}
+                                    message={
+                                        <div className="grid grid-cols-2 gap-6">
+                                            {helpImages.map((src, index) => (
+                                                <div key={index} className="flex flex-col items-center">
+                                                    <Image 
+                                                        src={src} 
+                                                        alt={`使用說明 ${index + 1}`} 
+                                                        width={200} 
+                                                        height={200} 
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    }
+                                />
+
+                                <button
+                                    onClick={() => router.push(`/planning?tripId=${tripId}`)}
+                                    className="bg-custom-kame text-gray-600 text-xs sm:text-sm
+                                    p-2  flex items-center space-x-2
+                                    rounded-full sm:rounded-xl
+                                    hover:bg-custom-atomic-tangerine hover:text-white
+                                    active:scale-95 active:shadow-inner hover:scale-105
+                                    transition-all duration-500 "
+                                >
+                                    <FaArrowAltCircleLeft className="text-base sm:text-lg" />
+                                    <span className="block sm:hidden">返回</span>
+                                    <span className="hidden sm:block">返回規劃行程</span>
+                                    
+
+                                </button>
+                            </div>
                         )}
                         </div>
 
