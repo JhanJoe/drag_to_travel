@@ -124,7 +124,7 @@ const HomePage: React.FC = () => {
               先建立一個新的行程來開始一切！
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl">
-              輸入行程名稱、起迄日期，儲存之後點擊"開始規劃"
+              輸入行程名稱、起迄日期，儲存之後點擊「開始規劃」
             </span>
           </div>
         </div>
