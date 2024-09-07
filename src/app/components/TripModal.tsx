@@ -11,6 +11,7 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [notes, setNotes] = useState("");
+    const [publicStatus, setPublicStatus] = useState("");
     const [startDateError, setStartDateError] = useState("");
     const [endDateError, setEndDateError] = useState("");
 
@@ -20,11 +21,13 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             setStartDate(trip.startDate);
             setEndDate(trip.endDate);
             setNotes(trip.notes);
+            setPublicStatus(trip.public);
         } else {
             setName("");
             setStartDate("");
             setEndDate("");
             setNotes("");
+            setPublicStatus(""); 
         }
     }, [trip]);
 
@@ -64,6 +67,7 @@ const TripModal: React.FC<TripModalProps> = ({ onClose, onSave, trip }) => {
             startDate,
             endDate,
             notes,
+            public: publicStatus,
         };
         onSave(newTrip);
     };

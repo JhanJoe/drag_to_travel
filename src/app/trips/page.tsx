@@ -143,7 +143,8 @@ const TripsPage: React.FC = () => {
                     endDate: trip.endDate,
                     notes: trip.notes,
                     userId: user.uid,
-                    userEmail: user.email
+                    userEmail: user.email,
+                    public: trip.public,
                 };
 
                 await updateDoc(tripRef, updatedTrip);

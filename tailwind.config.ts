@@ -13,6 +13,8 @@ const config: Config = {
         'custom-atomic-tangerine': '#FF9B71', //一種較飽和的粉橘色 rgb(255, 155, 113)
         'custom-reseda-green':'#5c745c', // 自定義顏色 reseda green 橄欖綠 rgb(82, 116, 87)
 
+        'custom-atomic-tangerine-deep': '#F5956C', //比atomic-tangerine(HSB下) brightness -4 =(18, 56, 96)
+
         'custom-light-cyan': "#D0EEF1", //比瓶覗淡兩個階的綠色 rgb(208, 238, 241)
 
         'custom-caribbean-green':'#3c6e71', // 自定義顏色 Caribbean green 橄欖綠 rgb(60, 110, 113)

@@ -66,7 +66,7 @@ const HomePage: React.FC = () => {
         ))}
           
         <div className="absolute inset-x-0 top-1/4 flex flex-col items-center md:items-start px-20 md:justify-center ">
-          <h1 className="text-4xl xs:text-6xl md:text-8xl font-bold text-custom-atomic-tangerine transition-all duration-1000 ease-out tracking-wide" style={{ textShadow: '2px 2px 4px rgba(255, 253, 130, 0.5)'}}>
+          <h1 className="text-4xl xs:text-6xl md:text-8xl font-bold text-custom-atomic-tangerine transition-all duration-1000 ease-out tracking-wider" style={{ textShadow: '2px 2px 4px rgba(255, 253, 130, 0.5)'}}>
             旅遊 X 拖拉
           </h1>
           <div className="overflow-hidden h-16 mt-4">
@@ -88,7 +88,9 @@ const HomePage: React.FC = () => {
       <div className="w-full bg-gray-100 transition-all duration-1000 ease-out">
         <div className="flex justify-center items-center gap-2 mt-2">
           <FaThumbsUp size={32} className="text-custom-kame animate-bounce"/>
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-custom-reseda-green pt-4 pb-2">旅友分享行程</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center text-custom-atomic-tangerine-deep pt-4 pb-2">
+            旅友分享行程
+          </h2>
           <FaThumbsUp size={32} className="text-custom-kame animate-bounce -scale-x-100 transform"/>
         </div>
         <PublicTrip />
@@ -98,7 +100,7 @@ const HomePage: React.FC = () => {
       <div className="flex flex-col justify-center items-center w-full bg-gray-100 transition-all duration-1000 ease-out">
         <div className="flex justify-center items-center gap-1 my-3">
           <MdOutlineKeyboardDoubleArrowDown size={36} className="text-custom-kame animate-bounce font-bold"/>
-          <div className="text-2xl sm:text-3xl font-bold text-center text-custom-atomic-tangerine my-2">
+          <div className="text-2xl sm:text-3xl font-bold text-center text-custom-atomic-tangerine-deep my-2">
           如何開始我的旅遊規劃？
           </div>
           <MdOutlineKeyboardDoubleArrowDown  size={36} className="text-custom-kame animate-bounce font-bold"/>
@@ -116,28 +118,28 @@ const HomePage: React.FC = () => {
               className="object-contain"
             />
           </div>
-          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine">
-            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine">
+          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine-deep">
+            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine-deep ">
               STEP 1 - 新增行程：
             </span>
-            <span className="text-lg sm:text-xl lg:text-2xl mb-2">
+            <span className="text-lg sm:text-xl lg:text-2xl mb-2 ">
               先建立一個新的行程來開始一切！
             </span>
-            <span className="text-lg sm:text-xl lg:text-2xl">
+            <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
               輸入行程名稱、起迄日期，儲存之後點擊「開始規劃」
             </span>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 p-3 w-[90%] justify-center mb-7 bg-white rounded-lg">
-          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine order-2 sm:order-1">
-            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine">
+          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine-deep order-2 sm:order-1">
+            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine-deep">
               STEP 2 - 搜尋景點：
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl mb-2">
               還不確定要去哪些地方？沒關係！
             </span>
-            <span className="text-lg sm:text-xl lg:text-2xl">
+            <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
               先新增清單來存放景點，在地圖上搜尋景點加入清單，儲存景點後就可以開始規劃
             </span>
           </div>
@@ -165,14 +167,14 @@ const HomePage: React.FC = () => {
             />
           </div>
 
-          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine">
-            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine">
+          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine-deep">
+            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine-deep">
               STEP 3 - 規劃行程：
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl mb-2">
               盡情拖&拉吧！
             </span>
-            <span className="text-lg sm:text-xl lg:text-2xl">
+            <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
               從清單選取景點，在任一日期列表之間拖來拖去，也可以加入行程時間和切換交通方式，完成後記得儲存！
             </span>
           </div>
