@@ -32,7 +32,7 @@ export default function RootLayout({
             </main>
           
             <footer className="p-1 sm:p-3  text-xs sm:text-base  w-full bg-custom-kame text-custom-dark-green opacity-40 sm:opacity-100 text-center mt-auto">
-              <div>Copyright @2024 WeHelp #5</div>
+              <div>Copyright @2024 WeHelp #5 Drag to Travel</div>
             </footer>
             </LoadingProvider>
           </TripProvider>

@@ -42,19 +42,8 @@ const config: Config = {
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
 
-      keyframes: {
-        'fade-in-out': {
-          '0%, 25%, 100%': { opacity: '0' },
-          '12.5%, 37.5%': { opacity: '1' },
-        },
-      },
-
-      animation: {
-        'fade-in-out': 'fade-in-out 28s infinite',
-      },
-
       screens: {
-        'xs': '480px', //自定義480px的RWD斷點
+        'xs': '481px', //自定義480px的RWD斷點
       },
     },
   },

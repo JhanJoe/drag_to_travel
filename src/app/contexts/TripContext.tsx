@@ -61,7 +61,6 @@ export const TripProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchTripAndPlaceLists = useCallback(async (userId: string, tripId: string) => {
         if (tripDataLoadingRef.current) {
-            console.log("已經在加載中，跳過此次Fetch");
             return;
         }
 

@@ -43,7 +43,7 @@ const PublicTrip: React.FC = () => {
     const SkeletonCard = () => (
         <div className="bg-white rounded-lg shadow-md overflow-hidden min-w-[250px] h-[250px] p-2">
             <div className="h-[60%] bg-gray-200 animate-pulse"></div>
-            <div className="p-1">
+            <div className="p-1 flex flex-col items-center justify-center">
                 <div className="h-6 bg-gray-200 rounded w-3/4 mt-2 animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded w-1/2 mt-2 animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded w-2/3 mt-2 animate-pulse"></div>

@@ -56,7 +56,7 @@ const HomePage: React.FC = () => {
         ))}
           
         <div className="absolute inset-x-0 top-1/4 flex flex-col items-center md:items-start px-20 md:justify-center ">
-          <h1 className="text-4xl xs:text-6xl md:text-8xl font-bold text-custom-atomic-tangerine transition-all duration-1000 ease-out tracking-wider" style={{ textShadow: '2px 2px 4px rgba(255, 253, 130, 0.5)'}}>
+          <h1 className="text-4xl xs:text-5xl sm::text-6xl md:text-8xl font-bold text-custom-atomic-tangerine transition-all duration-1000 ease-out tracking-wider" style={{ textShadow: '2px 2px 4px rgba(255, 253, 130, 0.5)'}}>
             旅遊 X 拖拉
           </h1>
           <div className="overflow-hidden h-16 mt-4">
@@ -130,7 +130,7 @@ const HomePage: React.FC = () => {
               還不確定要去哪些地方？沒關係！
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
-              先新增清單來存放景點，在地圖上搜尋景點加入清單，儲存景點後就可以開始規劃
+              先新增清單來存放有興趣的景點，在地圖上搜尋景點加入清單，有想法了再開始規劃
             </span>
           </div>
           <div className="w-full order-1 sm:order-2 flex justify-center">
@@ -145,7 +145,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 p-3 w-[90%] justify-center mb-10 bg-white rounded-lg">
+        <div className="flex flex-col sm:flex-row gap-2 p-3 w-[90%] justify-center mb-7 bg-white rounded-lg">
           <div className="w-full flex justify-center">
             <Image 
               src="/images/index-instruction-3.gif" 
@@ -165,8 +165,32 @@ const HomePage: React.FC = () => {
               盡情拖 & 拉吧！
             </span>
             <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
-              從清單選取景點，在任一日期列表之間拖來拖去，也可以加入行程時間和切換交通方式，完成後記得儲存！
+              從清單選取景點，在任一日期區塊之間拖來拖去，也可以加入行程時間和切換交通方式，確定後記得儲存！
             </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 p-3 w-[90%] justify-center mb-10 bg-white rounded-lg">
+          <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine-deep order-2 sm:order-1">
+            <span className="font-bold mb-2 text-xl sm:text-2xl lg:text-3xl border-b-2 border-custom-atomic-tangerine-deep">
+              STEP 4 - 分享行程：
+            </span>
+            <span className="text-lg sm:text-xl lg:text-2xl mb-2">
+              完成規劃後，想把行程分享給別人嗎？
+            </span>
+            <span className="text-lg sm:text-xl lg:text-2xl text-gray-500">
+              點擊「分享」可將網址分享給朋友，點擊「公開」則能讓你的行程公開在首頁，任何人無須註冊都能看到！
+            </span>
+          </div>
+          <div className="w-full order-1 sm:order-2 flex justify-center">
+            <Image 
+              src="/images/index-instruction-4.gif" 
+              width={4} 
+              height={2} 
+              alt="網站說明2" 
+              layout="responsive"
+              className="object-contain"
+            />
           </div>
         </div>
 
