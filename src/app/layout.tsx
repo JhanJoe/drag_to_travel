@@ -24,8 +24,9 @@ export default function RootLayout({
       style={{ fontFamily: "'Inter', 'Noto Sans TC', 'sans-serif'" }}
       >
         <AuthProvider>
-          <TripProvider>
-            <LoadingProvider>
+          <LoadingProvider>
+            <TripProvider>
+            
             <Navbar />
             <main className="flex-grow">
               {children}
@@ -34,8 +35,9 @@ export default function RootLayout({
             <footer className="p-1 sm:p-3  text-xs sm:text-base  w-full bg-custom-kame text-custom-dark-green opacity-40 sm:opacity-100 text-center mt-auto">
               <div>Copyright @2024 WeHelp #5 Drag to Travel</div>
             </footer>
-            </LoadingProvider>
-          </TripProvider>
+            </TripProvider>
+          </LoadingProvider>
+          
         </AuthProvider>
       </body>
     </html>

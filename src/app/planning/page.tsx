@@ -169,30 +169,6 @@ const PlanPage: React.FC = () => {
             lng: typeof destination.longitude === 'number' ? destination.longitude : parseFloat(destination.longitude)
         };
 
-        const convertTo24HourFormat = (time12h: string): string => {
-            const [time, modifier] = time12h.split(' ');
-            let [hours, minutes] = time.split(':');
-        
-            if (hours === '12') {
-                hours = '00';
-            }
-        
-            if (modifier === 'PM') {
-                hours = (parseInt(hours, 10) + 12).toString();
-            }
-        
-            return `${hours}:${minutes}`;
-        };
-
-        const date = new Date(dateKey); 
-
-        // 出發時間的優先序（leftTime > arrivedTime > now）
-        const departureTime = origin.leftTime 
-        ? new Date(`${dateKey}T${convertTo24HourFormat(origin.leftTime)}:00`) 
-        : origin.arrivedTime 
-        ? new Date(`${dateKey}T${convertTo24HourFormat(origin.arrivedTime)}:00`)
-        : new Date();
-
         const request = {
             origin: new google.maps.LatLng(originPosition.lat, originPosition.lng),
             destination: new google.maps.LatLng(destinationPosition.lat, destinationPosition.lng),
@@ -205,8 +181,6 @@ const PlanPage: React.FC = () => {
                 }
             })
         };
-
-        // console.log('request:', request); //TODO
 
         try {
             const result = await directionsService.route(request);
@@ -266,6 +240,22 @@ const PlanPage: React.FC = () => {
     const handleTimeChange = (e: ChangeEvent<HTMLInputElement>, dateKey: string, placeId: string, timeType: 'arrivedTime' | 'leftTime') => {
         const newTime = e.target.value;
 
+         // 先檢查時間邏輯（離開晚於抵達）
+        const currentPlace = itineraries[dateKey]?.find(place => place.id === placeId);
+        if (currentPlace) {
+            const { arrivedTime, leftTime } = currentPlace;
+
+            if (timeType === 'leftTime' && arrivedTime && newTime <= arrivedTime) {
+                alert('離開時間必須晚於抵達時間！');
+                return; 
+            }
+
+            if (timeType === 'arrivedTime' && leftTime && newTime >= leftTime) {
+                alert('抵達時間必須早於離開時間！');
+                return; 
+            }
+        }
+
         // 更新特定日期行程中的特定景點的時間
         setItineraries(prevItineraries => {
             const updatedItineraries = { ...prevItineraries };
@@ -280,15 +270,23 @@ const PlanPage: React.FC = () => {
                 const previousPlace = currentIndex > 0 ? dayItinerary[currentIndex - 1] : undefined;
                 const nextPlace = currentIndex < dayItinerary.length - 1 ? dayItinerary[currentIndex + 1] : undefined;
     
+                // 如輸入leftTime，重新計算前一個景點到currentPlace的路線
                 if (timeType === 'leftTime' && previousPlace) {
-                    // 如輸入leftTime，重新計算前一個景點到currentPlace的路線
                     calculateRoute(previousPlace, currentPlace, selectedMode, dateKey);
-                } else if (timeType === 'arrivedTime' && previousPlace && !currentPlace.leftTime) {
-                    // 如輸入arrivedTime但沒有leftTime，重新計算前一個景點到currentPlace的路線
+                } 
+
+                // 如輸入arrivedTime但沒有leftTime，重新計算前一個景點到currentPlace的路線
+                if (timeType === 'arrivedTime' && previousPlace && !currentPlace.leftTime) {
                     calculateRoute(previousPlace, currentPlace, selectedMode, dateKey);
                 }
+
+                // 如輸入leftTime，重新計算currentPlace到下一個景點的路線
                 if (timeType === 'leftTime' && nextPlace) {
-                    // 如輸入leftTime，重新計算currentPlace到下一個景點的路線
+                    calculateRoute(currentPlace, nextPlace, selectedMode, dateKey);
+                }
+
+                // 如輸入arrivedTime但沒有leftTime，重新計算currentPlace到下一個景點的路線
+                if (timeType === 'arrivedTime' && nextPlace && !currentPlace.leftTime) {
                     calculateRoute(currentPlace, nextPlace, selectedMode, dateKey);
                 }
             }
@@ -304,20 +302,12 @@ const PlanPage: React.FC = () => {
     const onDragEnd = (result: any) => {
         const { source, destination } = result;
 
-        // console.log('Drag ended:', { source, destination }); //TODO
-        // console.log('Current itineraries:', itineraries); //TODO
-        // console.log('Current placeLists:', placeLists); //TODO
-
         if (!destination) {
             return;
         }
 
         // 來源列表與目標列表
         let sourceList: (Place | ItineraryPlace)[] | undefined;
-
-        // console.log('sourceList:', sourceList); //TODO
-        // console.log('source.index:', source.index); //TODO
-        // console.log('source.droppableId:', source.droppableId); //TODO
 
         // 檢查destination是否為placelist之一，如果是就return（亦即阻止drop在placelist區域->只能拖出）
         if (placeLists.some(list => list.id === destination.droppableId)) {
@@ -331,8 +321,6 @@ const PlanPage: React.FC = () => {
             sourceList = placeList?.places;
         }
 
-        // console.log('Source list:', sourceList); //TODO
-
         if (!sourceList) {
             console.error("Source list not found.");
             return;
@@ -340,8 +328,6 @@ const PlanPage: React.FC = () => {
 
         // 從來源列表中找到被拖曳的item
         const movedItem = sourceList[source.index];
-
-        // console.log('Moved item:', movedItem); //TODO
 
         if (!movedItem) {
             console.error("Moved item not found.");
@@ -351,7 +337,7 @@ const PlanPage: React.FC = () => {
         // 目標列表
         let destList: (Place | ItineraryPlace)[] = itineraries[destination.droppableId] || [];
 
-        // 當place的id不包含 "-" 时，才複製一個新的place（=從上方list拉下來的place才需要複製）
+        // 當place的id不包含 "-" 時，才複製一個新的place（=從list拉過來的place才需要複製）
         const newPlace = movedItem.id.includes("-")
         ? movedItem // 如果包含"-"，則不複製
         : {
@@ -376,11 +362,11 @@ const PlanPage: React.FC = () => {
             transportMode: undefined
         };
 
-        // 如果複製的新place不等於movedItem，才把新place放入目標列表中，避免重複
+        // 如果複製的新place不等於movedItem，把新place直接放入目標列表中
         if (newPlace !== movedItem) {
             destList.splice(destination.index, 0, newPlace);
         } else {
-            // 如果是已存在的（即 id 包含 "-" 的place），僅移動它在目標列表的位置
+            // 如果是已存在的（即 id 包含 "-" 的place），僅移動它在目標列表的位置，從來源列表移除、在新列表加入，避免重複
             sourceList.splice(source.index, 1); 
             destList.splice(destination.index, 0, movedItem);
         }

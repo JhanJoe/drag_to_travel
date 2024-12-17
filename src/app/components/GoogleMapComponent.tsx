@@ -243,10 +243,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                                                 <Image
                                                     src={placePhotoUrl}
                                                     alt={selectedPlace.name}
-                                                    // width={125} 
-                                                    // height={70} 
                                                     fill
-                                                    // layout="responsive" // 讓圖片根據容器比例進行縮放
                                                     className="rounded m-0 p-0 object-contain "
                                                 />
                                             )}

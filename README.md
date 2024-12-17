@@ -55,7 +55,7 @@
 ![Map demo](./public/images/index-instruction-2.gif)
 
 #### (5) 規劃行程：隨意拖動景點來排行程
-當清單有足夠景點，本頁可以拖曳清單中已存景點至任意日期區塊，並可加入抵達/離開時間，或切換交通方式。
+當清單有足夠景點，本頁可以拖曳清單中已存景點至任意日期區塊，並可加入抵達/離開時間，或切換交通方式，規劃到一個段落記得儲存。
 
 ![Planning demo](./public/images/index-instruction-3.gif)
 

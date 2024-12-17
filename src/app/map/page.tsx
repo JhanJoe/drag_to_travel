@@ -27,7 +27,6 @@ const MapPage: React.FC = () => {
     const [infoWindowOpen, setInfoWindowOpen] = useState(false);  //地圖上資訊框的顯示
     const router = useRouter();
     const [tripId, setTripId] = useState<string | null>(null);
-    // const [hovered, setHovered] = useState(false); //地圖/規劃切換之hover效果
     const [hovered, setHovered] = useState('map'); //地圖/規劃/分享切換之hover效果
     const tripDataLoadingRef = useRef(false); // 使用 useRef 來跟踪 tripDataLoading 狀態
     const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
@@ -123,7 +122,6 @@ const MapPage: React.FC = () => {
                 await batch.commit();
 
                 await deleteDoc(doc(db, "placeLists", id));
-                // removePlaceFromList(tripId, id); //TODO
                 updatePlaceLists(prevPlaceLists => 
                     prevPlaceLists.filter(placeList => placeList.id !== id)
                 );
@@ -163,7 +161,7 @@ const MapPage: React.FC = () => {
                 plannedDate: '', 
                 arrivedTime: '', 
                 leftTime: '',
-                photoUrl: selectedPlace.photos?.[0]?.getUrl() || '',
+                photoUrl: selectedPlace.photos?.[0]?.getUrl() || '', //TODO 待檢視
             };
             
             try {

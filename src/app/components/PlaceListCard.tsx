@@ -25,7 +25,7 @@ const PlaceListCard: React.FC<PlaceListCardProps> = ({ placeList, onDelete, onUp
     };
 
     const handleDelete = () => {
-        if (onDelete && confirm("你確定要刪除此行程嗎？")) {
+        if (onDelete && confirm("你確定要刪除這個清單嗎？")) {
             onDelete(placeList.id);
         }
     };

@@ -71,8 +71,9 @@ const PublicTrip: React.FC = () => {
                             <Image
                                 src={getImageForTrip(index)}
                                 alt={trip.name}
-                                layout="fill"
-                                objectFit="contain"
+                                width={100}
+                                height={100}
+                                className="object-contain flex justify-center items-center h-full w-full"
                             />
                         </div>
 

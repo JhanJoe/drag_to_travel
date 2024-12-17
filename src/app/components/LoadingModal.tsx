@@ -27,6 +27,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, message }) => {
                     width={400}
                     height={400}
                     unoptimized={true}
+                    priority={true}
                 />
             <p className="-mt-12 text-center text-lg font-semibold text-white">
                 {message}

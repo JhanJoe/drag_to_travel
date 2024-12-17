@@ -25,7 +25,7 @@ const HomePage: React.FC = () => {
     useEffect(() => {
       const interval = setInterval(() => {
         setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-      }, 3600); 
+      }, 5000); 
   
       return () => clearInterval(interval);
     }, []);
@@ -44,13 +44,15 @@ const HomePage: React.FC = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
               index === currentImageIndex ? 'opacity-100' : 'opacity-0'
             }`}
+            
           >
               <Image
                 src={image}
                 alt={`Banner ${index + 1}`}
                 fill
                 style={{ objectFit: 'cover' }}
-                className="w-full h-auto sm:h-full opacity-60" 
+                className="w-full h-auto sm:h-full opacity-60 animate-slide" 
+                priority={true}
               />
             </div>
         ))}
@@ -101,11 +103,11 @@ const HomePage: React.FC = () => {
           <div className="w-full flex justify-center">
             <Image 
               src="/images/index-instruction-1.gif" 
-              width={4} 
-              height={2} 
-              alt="網站說明1" 
-              layout="responsive"
+              width={974} 
+              height={496} 
+              alt="網站說明1 新增行程" 
               className="object-contain"
+              unoptimized
             />
           </div>
           <div className="flex flex-col justify-center text-left items-start w-full p-5 text-custom-atomic-tangerine-deep">
@@ -136,11 +138,11 @@ const HomePage: React.FC = () => {
           <div className="w-full order-1 sm:order-2 flex justify-center">
             <Image 
               src="/images/index-instruction-2.gif" 
-              width={4} 
-              height={2} 
-              alt="網站說明2" 
-              layout="responsive"
+              width={974} 
+              height={496} 
+              alt="網站說明2 搜尋景點" 
               className="object-contain"
+              unoptimized
             />
           </div>
         </div>
@@ -149,11 +151,11 @@ const HomePage: React.FC = () => {
           <div className="w-full flex justify-center">
             <Image 
               src="/images/index-instruction-3.gif" 
-              width={4} 
-              height={2} 
-              alt="網站說明3" 
-              layout="responsive"
+              width={974} 
+              height={496} 
+              alt="網站說明3 規劃行程" 
               className="object-contain"
+              unoptimized
             />
           </div>
 
@@ -185,11 +187,11 @@ const HomePage: React.FC = () => {
           <div className="w-full order-1 sm:order-2 flex justify-center">
             <Image 
               src="/images/index-instruction-4.gif" 
-              width={4} 
-              height={2} 
-              alt="網站說明2" 
-              layout="responsive"
+              width={974} 
+              height={496} 
+              alt="網站說明4 分享行程" 
               className="object-contain"
+              unoptimized
             />
           </div>
         </div>
