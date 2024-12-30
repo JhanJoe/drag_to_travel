@@ -161,7 +161,7 @@ const MapPage: React.FC = () => {
                 plannedDate: '', 
                 arrivedTime: '', 
                 leftTime: '',
-                photoUrl: selectedPlace.photos?.[0]?.getUrl() || '', //TODO 待檢視
+                photoUrl: selectedPlace.photoUrl || '',
             };
             
             try {

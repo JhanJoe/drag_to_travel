@@ -93,14 +93,42 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
                 }
             }
 
+            const fetchFinalImageUrl = async (photoUrl: string) => {
+                try {
+                    // 呼叫 Next.js API Route
+                    const response = await fetch(`/api/get-image?url=${encodeURIComponent(photoUrl)}`);
+                    const data = await response.json();
+            
+                    if (data.finalUrl) {
+                        setPlacePhotoUrl(data.finalUrl); 
+                        setSelectedPlace((prevPlace: any) => ({
+                            ...prevPlace,
+                            photoUrl: data.finalUrl,
+                        }));
+                    } else {
+                        setPlacePhotoUrl(photoUrl); 
+                        setSelectedPlace((prevPlace: any) => ({
+                            ...prevPlace,
+                            photoUrl: photoUrl, 
+                        }));
+                    }
+                } catch (error) {
+                    console.error('圖片解析失敗:', error);
+                    setPlacePhotoUrl(photoUrl);
+
+                    setSelectedPlace((prevPlace: any) => ({
+                        ...prevPlace,
+                        photoUrl: photoUrl, 
+                    }));
+                }
+            };
+
             if (place.photos && place.photos.length > 0) {
                 const photoUrl = place.photos[0].getUrl({ maxWidth: 300, maxHeight: 200 });
-                setPlacePhotoUrl(photoUrl);
+                fetchFinalImageUrl(photoUrl);
             } else {
-                setPlacePhotoUrl(null); 
+                setPlacePhotoUrl(null);
             }
-        } else {
-            console.log('無法獲取地點詳細資訊');
         }
     };
 
