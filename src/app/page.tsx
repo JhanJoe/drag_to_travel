@@ -44,6 +44,9 @@ const HomePage: React.FC = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
               index === currentImageIndex ? 'opacity-100' : 'opacity-0'
             }`}
+            style={{
+              transform: 'translateX(10px)',
+            }}
             
           >
               <Image
